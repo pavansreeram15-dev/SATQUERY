@@ -18,7 +18,7 @@ import {
   Share2,
   Sun,
   ShieldAlert
-} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const DisasterInfoPanel: React.FC = () => {
   const {
@@ -93,7 +93,13 @@ export const DisasterInfoPanel: React.FC = () => {
   };
 
   return (
-    <div className="absolute bottom-6 right-6 z-[450] w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-space-950/98 border border-cyan-500/50 shadow-2xl backdrop-blur-2xl p-4 font-mono text-xs text-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <motion.div
+      drag
+      dragMomentum={false}
+      dragElastic={0}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute bottom-6 right-6 z-[450] w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-space-950/98 border border-cyan-500/50 shadow-2xl backdrop-blur-2xl p-4 font-mono text-xs text-slate-200 cursor-grab active:cursor-grabbing select-none animate-in fade-in slide-in-from-bottom-4 duration-200"
+    >
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-800">
         <div className="flex items-center gap-2">
@@ -226,6 +232,6 @@ export const DisasterInfoPanel: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

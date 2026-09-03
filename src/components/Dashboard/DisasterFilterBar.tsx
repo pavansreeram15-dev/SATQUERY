@@ -18,7 +18,7 @@ import {
   Layers,
   Sparkles,
   SunMedium,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const TIME_OPTIONS: { label: string; value: TimeRangeOption }[] = [
   { label: '1 Hour', value: '1h' },
@@ -135,7 +135,13 @@ export const DisasterFilterBar: React.FC = () => {
   };
 
   return (
-    <div className="absolute top-4 left-4 z-[380] font-mono text-xs select-none">
+    <motion.div
+      drag
+      dragMomentum={false}
+      dragElastic={0}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute top-4 left-4 z-[380] font-mono text-xs select-none cursor-grab active:cursor-grabbing"
+    >
       {/* Collapsed Pill Bar */}
       <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-space-950/90 border border-cyan-500/40 shadow-2xl backdrop-blur-xl">
         <button
@@ -267,9 +273,8 @@ export const DisasterFilterBar: React.FC = () => {
           <div className="pt-2 border-t border-slate-800 text-[9px] text-slate-500 flex items-center justify-between">
             <span>Sources: USGS · EONET · FIRMS · GDACS</span>
             <span className="text-cyan-400 font-bold">WGS84</span>
-          </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
