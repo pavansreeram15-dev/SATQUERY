@@ -64,7 +64,7 @@ class DisasterStreamBroadcaster:
             except Exception as e:
                 logger.error(f"[Scheduler] Background disaster polling iteration failed: {e}")
 
-            # Sleep between polling cycles (min 45 seconds)
-            await asyncio.sleep(45)
+            # Sleep between polling cycles (90 seconds for optimal efficiency)
+            await asyncio.sleep(90)
 
 disaster_broadcaster = DisasterStreamBroadcaster()

@@ -290,8 +290,7 @@ class AISService:
             if not self.api_key:
                 self._status = "NO_DATA"
                 self._error_message = "AISSTREAM_API_KEY is not configured on backend."
-                logger.info("[AIS] AISSTREAM_API_KEY is not configured. Waiting 15s...")
-                await asyncio.sleep(15)
+                await asyncio.sleep(60)
                 self.api_key = os.getenv("AISSTREAM_API_KEY", "")
                 continue
 

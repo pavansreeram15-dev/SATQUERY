@@ -20,6 +20,43 @@ const shipTypeColors: Record<string, string> = {
   Other: '#64748b',      // Slate
 };
 
+const aisIconCache = new Map<string, L.DivIcon>();
+
+const getCachedAISIcon = (shipType: string, rawHeading: number): L.DivIcon => {
+  const color = shipTypeColors[shipType] || shipTypeColors.Other;
+  // Quantize heading to 10-degree buckets to avoid creating endless unique DOM icon templates
+  const headingBucket = Math.round((rawHeading % 360) / 10) * 10;
+  const cacheKey = `${shipType}_${headingBucket}`;
+
+  const cached = aisIconCache.get(cacheKey);
+  if (cached) return cached;
+
+  const iconHtml = `
+    <div style="
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(${headingBucket}deg);
+    ">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="${color}" stroke="#0f172a" stroke-width="1.5">
+        <path d="M12 2L4 20C4 20 8 18 12 18C16 18 20 20 20 20L12 2Z"/>
+      </svg>
+    </div>
+  `;
+
+  const newIcon = L.divIcon({
+    html: iconHtml,
+    className: 'ais-vessel-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+
+  aisIconCache.set(cacheKey, newIcon);
+  return newIcon;
+};
+
 export const AISVesselsLayer: React.FC<AISVesselsLayerProps> = ({
   map,
   vessels,
@@ -54,34 +91,14 @@ export const AISVesselsLayer: React.FC<AISVesselsLayerProps> = ({
     }
 
     const currentMmsis = new Set<string>();
+    // Cap at top 60 vessels to keep map completely fluid
+    const safeVessels = (vessels || []).slice(0, 60);
 
-    vessels.forEach((vessel) => {
+    safeVessels.forEach((vessel) => {
       currentMmsis.add(vessel.mmsi);
       const color = shipTypeColors[vessel.ship_type] || shipTypeColors.Other;
       const heading = vessel.heading || vessel.course || 0;
-
-      const iconHtml = `
-        <div style="
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform: rotate(${heading}deg);
-          transition: transform 0.3s ease;
-        ">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="${color}" stroke="#0f172a" stroke-width="1.5">
-            <path d="M12 2L4 20C4 20 8 18 12 18C16 18 20 20 20 20L12 2Z"/>
-          </svg>
-        </div>
-      `;
-
-      const customIcon = L.divIcon({
-        html: iconHtml,
-        className: 'ais-vessel-icon',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
+      const customIcon = getCachedAISIcon(vessel.ship_type, heading);
 
       const popupContent = `
         <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; min-width: 220px;">

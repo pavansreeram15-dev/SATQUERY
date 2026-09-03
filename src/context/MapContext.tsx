@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { BBox, LatLngCoord, ActiveLayerState, BasemapType, DrawModeType, ComparisonViewMode } from '../types/map';
 import { SAMPLE_REGIONS, SampleRegion } from '../config/sampleRegions';
 import { QueryResponse, GeoJSONFeature, LocationSearchResult, ComparisonResponse } from '../types/query';
@@ -119,7 +119,7 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isLoading: false,
   });
 
-  const clearDrawnAOI = () => {
+  const clearDrawnAOI = useCallback(() => {
     setDrawnBBox(null);
     setDrawnPolygon(null);
     setDrawMode(null);
@@ -128,23 +128,23 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setQueryResult(null);
     setSelectedFeature(null);
     setSearchLocation(null);
-  };
+  }, [activeRegion.bbox]);
 
-  const toggleLayer = (layerName: keyof ActiveLayerState) => {
+  const toggleLayer = useCallback((layerName: keyof ActiveLayerState) => {
     setLayers((prev) => ({
       ...prev,
       [layerName]: !prev[layerName],
     }));
-  };
+  }, []);
 
-  const setBasemap = (basemap: BasemapType) => {
+  const setBasemap = useCallback((basemap: BasemapType) => {
     setLayers((prev) => ({
       ...prev,
       basemap,
     }));
-  };
+  }, []);
 
-  const selectRegionById = (regionId: string) => {
+  const selectRegionById = useCallback((regionId: string) => {
     const found = SAMPLE_REGIONS.find((r) => r.id === regionId);
     if (found) {
       setActiveRegion(found);
@@ -158,18 +158,18 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedFeature(null);
       setComparison((prev) => ({ ...prev, enabled: false }));
     }
-  };
+  }, []);
 
-  const resetMapToRegion = () => {
+  const resetMapToRegion = useCallback(() => {
     setViewportBBox(activeRegion.bbox);
     setDrawnBBox(null);
     setDrawnPolygon(null);
     setDrawMode(null);
     setIsDrawingBBox(false);
     setSearchLocation(null);
-  };
+  }, [activeRegion.bbox]);
 
-  const triggerSatelliteAnalysisForDisaster = (disaster: EarthEvent) => {
+  const triggerSatelliteAnalysisForDisaster = useCallback((disaster: EarthEvent) => {
     const lat = disaster.latitude;
     const lon = disaster.longitude;
     const span = 0.15;
@@ -186,48 +186,73 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSelectedDisaster(disaster);
     setQueryResult(null);
     setSelectedFeature(null);
-  };
+  }, []);
+
+  const contextValue = useMemo<MapContextType>(
+    () => ({
+      activeRegion,
+      setActiveRegion,
+      viewportBBox,
+      setViewportBBox,
+      drawnBBox,
+      setDrawnBBox,
+      drawnPolygon,
+      setDrawnPolygon,
+      drawMode,
+      setDrawMode,
+      isDrawingBBox,
+      setIsDrawingBBox,
+      clearDrawnAOI,
+      layers,
+      toggleLayer,
+      setBasemap,
+      queryResult,
+      setQueryResult,
+      selectedFeature,
+      setSelectedFeature,
+      comparison,
+      setComparison,
+      selectRegionById,
+      resetMapToRegion,
+      searchLocation,
+      setSearchLocation,
+      selectedDisaster,
+      setSelectedDisaster,
+      disastersData,
+      setDisastersData,
+      disasterFilters,
+      setDisasterFilters,
+      triggerSatelliteAnalysisForDisaster,
+      providerHealthModalOpen,
+      setProviderHealthModalOpen,
+    }),
+    [
+      activeRegion,
+      viewportBBox,
+      drawnBBox,
+      drawnPolygon,
+      drawMode,
+      isDrawingBBox,
+      clearDrawnAOI,
+      layers,
+      toggleLayer,
+      setBasemap,
+      queryResult,
+      selectedFeature,
+      comparison,
+      selectRegionById,
+      resetMapToRegion,
+      searchLocation,
+      selectedDisaster,
+      disastersData,
+      disasterFilters,
+      triggerSatelliteAnalysisForDisaster,
+      providerHealthModalOpen,
+    ]
+  );
 
   return (
-    <MapContext.Provider
-      value={{
-        activeRegion,
-        setActiveRegion,
-        viewportBBox,
-        setViewportBBox,
-        drawnBBox,
-        setDrawnBBox,
-        drawnPolygon,
-        setDrawnPolygon,
-        drawMode,
-        setDrawMode,
-        isDrawingBBox,
-        setIsDrawingBBox,
-        clearDrawnAOI,
-        layers,
-        toggleLayer,
-        setBasemap,
-        queryResult,
-        setQueryResult,
-        selectedFeature,
-        setSelectedFeature,
-        comparison,
-        setComparison,
-        selectRegionById,
-        resetMapToRegion,
-        searchLocation,
-        setSearchLocation,
-        selectedDisaster,
-        setSelectedDisaster,
-        disastersData,
-        setDisastersData,
-        disasterFilters,
-        setDisasterFilters,
-        triggerSatelliteAnalysisForDisaster,
-        providerHealthModalOpen,
-        setProviderHealthModalOpen,
-      }}
-    >
+    <MapContext.Provider value={contextValue}>
       {children}
     </MapContext.Provider>
   );
