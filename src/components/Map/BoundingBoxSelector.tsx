@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useDragControls } from 'framer-motion';
 import { useMapContext } from '../../context/MapContext';
 import { usePersona } from '../../context/PersonaContext';
 import { SAMPLE_REGIONS } from '../../config/sampleRegions';
@@ -13,8 +14,7 @@ import {
   Wind,
   ChevronDown,
   ChevronUp,
-  CheckCircle2,
-  Activity
+  GripHorizontal,
 } from 'lucide-react';
 
 export const BoundingBoxSelector: React.FC = () => {
@@ -28,6 +28,9 @@ export const BoundingBoxSelector: React.FC = () => {
     setIsDrawingBBox,
     clearDrawnAOI,
   } = useMapContext();
+
+  const dragControls = useDragControls();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
@@ -47,6 +50,18 @@ export const BoundingBoxSelector: React.FC = () => {
   const dLatKm = Math.abs(maxLat - minLat) * 111.139;
   const dLonKm = Math.abs(maxLon - minLon) * 111.32 * Math.cos(meanLatRad);
   const approxAreaKm2 = (dLatKm * dLonKm).toFixed(2);
+
+  // Disable leaflet event propagation on panel so dragging doesn't pan the map
+  useEffect(() => {
+    if (panelRef.current) {
+      import('leaflet').then((L) => {
+        if (panelRef.current) {
+          L.DomEvent.disableClickPropagation(panelRef.current);
+          L.DomEvent.disableScrollPropagation(panelRef.current);
+        }
+      });
+    }
+  }, []);
 
   // Fetch live Open-Meteo European CAMS Air Quality Telemetry
   useEffect(() => {
@@ -93,16 +108,31 @@ export const BoundingBoxSelector: React.FC = () => {
   const isCustomDrawn = Boolean(drawnBBox || drawnPolygon);
 
   return (
-    <div className="absolute top-4 left-4 z-[400] select-none font-mono text-xs">
-      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-72 md:w-80 overflow-hidden flex flex-col transition-all">
-        {/* Header Bar */}
-        <div className="px-3 py-2 bg-space-900/90 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-cyan-300 font-bold">
-            <Crosshair className="w-4 h-4 text-cyan-400" />
-            <span className="text-[11px] tracking-wide">DRAW REGION & AOI</span>
+    <motion.div
+      ref={panelRef}
+      drag
+      dragControls={dragControls}
+      dragListener={false}
+      dragMomentum={false}
+      dragElastic={0}
+      className="absolute top-4 left-4 z-[400] select-none font-mono text-xs"
+    >
+      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-72 md:w-80 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10">
+        {/* Movable Grip Header */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group"
+          title="Drag to reposition window anywhere"
+        >
+          <div className="flex items-center gap-2 pointer-events-none">
+            <GripHorizontal className="w-4 h-4 text-cyan-400/80 group-hover:text-cyan-300 transition-colors" />
+            <div className="flex items-center gap-1.5 font-bold text-cyan-300">
+              <Crosshair className="w-4 h-4 text-cyan-400" />
+              <span className="tracking-wide">DRAW REGION & AOI</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
             {isCustomDrawn ? (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300">
                 CUSTOM AOI
@@ -114,7 +144,7 @@ export const BoundingBoxSelector: React.FC = () => {
             )}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-space-800 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-space-800 transition-colors cursor-pointer"
               title={isOpen ? 'Collapse' : 'Expand'}
             >
               {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -235,6 +265,6 @@ export const BoundingBoxSelector: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
