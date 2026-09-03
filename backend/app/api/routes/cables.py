@@ -18,6 +18,7 @@ async def get_cables(bbox: Optional[str] = Query(None, description="Bounding box
     return cable_service.get_cables(bbox=bbox)
 
 @router.get("/landing-points", response_model=LandingPointsResponse, summary="Get Coastal Landing Points")
+@router.get("/landing-stations", response_model=LandingPointsResponse, summary="Get Coastal Landing Stations (Alias)")
 async def get_landing_points(bbox: Optional[str] = Query(None, description="Bounding box 'min_lon,min_lat,max_lon,max_lat'")):
     """
     Returns global submarine cable landing point terminals GeoJSON.

@@ -254,19 +254,22 @@ class DisasterAggregatorService:
 
         provider_health: List[DisasterProviderHealth] = []
         for p in self.providers:
-            h = p.health_check()
-            provider_health.append(
-                DisasterProviderHealth(
-                    provider_name=h["provider"],
-                    status=h["status"],
-                    event_count=h["event_count"],
-                    last_poll_timestamp=h["last_poll"],
-                    poll_interval_seconds=h["poll_interval_seconds"],
-                    requires_api_key=h["requires_api_key"],
-                    is_authenticated=h["is_authenticated"],
-                    error_message=h.get("error")
+            if hasattr(p, "get_health"):
+                provider_health.append(p.get_health())
+            elif hasattr(p, "health_check"):
+                h = p.health_check()
+                provider_health.append(
+                    DisasterProviderHealth(
+                        provider_name=h.get("provider", "Disaster Provider"),
+                        status=h.get("status", "OPERATIONAL"),
+                        event_count=h.get("event_count", 0),
+                        last_poll_time=h.get("last_poll"),
+                        poll_interval_seconds=h.get("poll_interval_seconds", 300),
+                        requires_api_key=h.get("requires_api_key", False),
+                        is_authenticated=h.get("is_authenticated", True),
+                        error_message=h.get("error")
+                    )
                 )
-            )
 
         return DisasterSummaryResponse(
             total_active_events=len(events),

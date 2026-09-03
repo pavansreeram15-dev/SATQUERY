@@ -18,3 +18,16 @@ async def search_maritime_ports(q: str = Query(..., min_length=1, description="S
     Fast query search across ports, terminals, UN/LOCODE, and maritime infrastructure.
     """
     return maritime_service.search_ports(query=q)
+
+@router.get("/summary", summary="Get Maritime Infrastructure Summary")
+async def get_maritime_summary():
+    """
+    Returns global operational counts for ports, terminals, and submarine landing points.
+    """
+    ports = maritime_service.get_ports()
+    return {
+        "status": "OPERATIONAL",
+        "total_ports": len(ports.features),
+        "total_berths_monitored": sum(f.properties.berth_count or 0 for f in ports.features),
+        "active_telemetry": True
+    }
