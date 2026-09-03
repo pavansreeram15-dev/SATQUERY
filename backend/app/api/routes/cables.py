@@ -54,3 +54,12 @@ async def get_cable_detail(cable_id: str):
     if not detail:
         raise HTTPException(status_code=404, detail=f"Submarine cable '{cable_id}' not found.")
     return detail
+
+@router.get("/search")
+async def search_cables_and_landing_points(
+    q: str = Query(..., description="Search query string")
+):
+    """
+    Search submarine cables and landing points by name, owner, or country.
+    """
+    return await cable_service.search_cables(query=q)

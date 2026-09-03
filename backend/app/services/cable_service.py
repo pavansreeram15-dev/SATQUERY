@@ -239,4 +239,58 @@ class CableService:
 
         return None
 
+    async def search_cables(self, query: str) -> Dict[str, Any]:
+        """
+        Search submarine cables and landing points by name, country, or owner.
+        """
+        q = query.strip().lower()
+        if not q:
+            return {"cables": [], "landing_points": [], "total_count": 0, "query": query}
+
+        cables_raw = await self._fetch_cables_geojson()
+        landing_raw = await self._fetch_landing_points_geojson()
+
+        matched_cables = []
+        for feat in cables_raw:
+            props = feat.get("properties", {})
+            name = str(props.get("name", "")).lower()
+            cid = str(props.get("id", "")).lower()
+            owners = str(props.get("owners", "")).lower()
+            if q in name or q in cid or q in owners:
+                matched_cables.append({
+                    "id": props.get("id"),
+                    "name": props.get("name"),
+                    "color": props.get("color", "#06b6d4"),
+                    "owners": props.get("owners"),
+                    "length": props.get("length"),
+                    "coordinates": props.get("coordinates")
+                })
+                if len(matched_cables) >= 20:
+                    break
+
+        matched_lp = []
+        for feat in landing_raw:
+            props = feat.get("properties", {})
+            geom = feat.get("geometry", {})
+            name = str(props.get("name", "")).lower()
+            cid = str(props.get("id", "")).lower()
+            country = str(props.get("country", "")).lower()
+            if q in name or q in cid or q in country:
+                matched_lp.append({
+                    "id": props.get("id"),
+                    "name": props.get("name"),
+                    "country": props.get("country"),
+                    "coordinates": geom.get("coordinates")
+                })
+                if len(matched_lp) >= 20:
+                    break
+
+        return {
+            "cables": matched_cables,
+            "landing_points": matched_lp,
+            "total_count": len(matched_cables) + len(matched_lp),
+            "query": query,
+            "attribution": ATTRIBUTION_TEXT
+        }
+
 cable_service = CableService()

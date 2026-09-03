@@ -1,13 +1,50 @@
-import React from 'react';
-import { Radio, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { Radio, Search, X, Anchor, Globe } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
+import { cableApi } from '../../services/cableApi';
 
 export const MaritimeControlBar: React.FC = () => {
-  const { layers, toggleLayer } = useMapContext();
+  const { layers, toggleLayer, setViewportBBox } = useMapContext();
+  const [searchInput, setSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState<{
+    cables: Array<{ id: string; name: string; color?: string; owners?: string; length?: string; coordinates?: any }>;
+    landing_points: Array<{ id: string; name: string; country?: string; coordinates?: [number, number] }>;
+  }>({ cables: [], landing_points: [] });
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInput.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const res = await cableApi.search(searchInput.trim());
+      setSearchResults({
+        cables: res.cables || [],
+        landing_points: res.landing_points || []
+      });
+    } catch (err) {
+      console.warn('[MaritimeControlBar] Cable search warning:', err);
+      setSearchResults({ cables: [], landing_points: [] });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectLandingPoint = (coords: [number, number]) => {
+    // coords: [lon, lat]
+    const span = 0.08;
+    setViewportBBox([
+      coords[0] - span,
+      coords[1] - span,
+      coords[0] + span,
+      coords[1] + span,
+    ]);
+  };
 
   return (
     <div className="rounded-2xl bg-space-900/90 border border-slate-800 shadow-2xl backdrop-blur-md p-3 text-xs text-slate-100 space-y-3 font-mono">
-      {/* Header & Telemetry Status */}
+      {/* 1. Top Header Title & Telemetry Status */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
@@ -27,7 +64,73 @@ export const MaritimeControlBar: React.FC = () => {
         </span>
       </div>
 
-      {/* Feature Layer Button */}
+      {/* 2. Submarine Cable & Landing Point Search Bar */}
+      <form onSubmit={handleSearchSubmit} className="relative w-full">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search cable, landing terminal, country..."
+          className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-space-950 border border-slate-700 text-slate-200 placeholder-slate-500 text-[11px] focus:outline-none focus:border-cyan-500 transition-colors shadow-inner"
+        />
+        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+        {searchInput && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('');
+              setSearchResults({ cables: [], landing_points: [] });
+            }}
+            className="absolute right-2 top-2.5 text-slate-400 hover:text-white"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </form>
+
+      {/* Search Results Dropdown */}
+      {(searchResults.cables.length > 0 || searchResults.landing_points.length > 0) && (
+        <div className="p-2 rounded-xl bg-space-950 border border-slate-800 space-y-1.5 max-h-48 overflow-y-auto animate-in fade-in">
+          {searchResults.cables.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[10px] text-cyan-400 font-bold uppercase flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                <span>Cables ({searchResults.cables.length}):</span>
+              </div>
+              {searchResults.cables.map((c) => (
+                <div
+                  key={c.id}
+                  className="p-1.5 rounded-lg bg-space-900/60 border border-slate-800 text-[11px] flex justify-between items-center"
+                >
+                  <span className="font-bold text-slate-200">{c.name}</span>
+                  <span className="text-[9px] text-slate-400">{c.length || 'Transoceanic'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {searchResults.landing_points.length > 0 && (
+            <div className="space-y-1 pt-1 border-t border-slate-800">
+              <div className="text-[10px] text-sky-400 font-bold uppercase flex items-center gap-1">
+                <Anchor className="w-3 h-3" />
+                <span>Landing Terminals ({searchResults.landing_points.length}):</span>
+              </div>
+              {searchResults.landing_points.map((lp) => (
+                <button
+                  key={lp.id}
+                  onClick={() => lp.coordinates && handleSelectLandingPoint(lp.coordinates)}
+                  className="w-full text-left p-1.5 rounded-lg hover:bg-space-850 flex items-center justify-between text-[11px] transition-colors border border-transparent hover:border-slate-800"
+                >
+                  <span className="font-bold text-slate-200">{lp.name}</span>
+                  <span className="text-[9px] text-sky-300 font-mono">{lp.country || 'Terminal'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Submarine Cables Feature Button */}
       <div className="flex items-center justify-between gap-2">
         <button
           onClick={() => toggleLayer('submarineCables')}

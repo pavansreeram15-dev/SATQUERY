@@ -24,5 +24,17 @@ export const cableApi = {
    */
   async getCableDetail(cableId: string): Promise<SubmarineCableDetail> {
     return fetchApi<SubmarineCableDetail>(`/api/maritime/cables/${encodeURIComponent(cableId)}`);
+  },
+
+  /**
+   * Search submarine cables and landing points by query.
+   */
+  async search(query: string): Promise<{
+    cables: Array<{ id: string; name: string; color?: string; owners?: string; length?: string; coordinates?: any }>;
+    landing_points: Array<{ id: string; name: string; country?: string; coordinates?: [number, number] }>;
+    total_count: number;
+    query: string;
+  }> {
+    return fetchApi(`/api/maritime/search?q=${encodeURIComponent(query)}`);
   }
 };
