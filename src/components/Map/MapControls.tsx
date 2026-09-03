@@ -184,25 +184,30 @@ export const MapControls: React.FC = () => {
                 onToggle={() => toggleLayer('change')}
               />
 
-              {/* Submarine Cables Layer Item */}
-              <div className="p-1.5 rounded-lg border border-slate-800 bg-space-900/80 space-y-1.5">
-                <div className="flex items-center justify-between text-[11px]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-                    <span className="font-semibold text-slate-100">Submarine Fiber Optic Cables</span>
+              {/* Global Maritime Infrastructure (Submarine Cables) */}
+              <div className="p-2 rounded-xl border border-slate-800 bg-space-900/90 space-y-2 shadow-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />
+                    <div className="truncate">
+                      <div className="font-bold text-slate-100 text-[11px] truncate">Global Maritime Infrastructure</div>
+                      <div className="text-[9px] text-slate-400">Submarine Cables & Landing Terminals</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => setShowCableSearch(!showCableSearch)}
-                      className="p-1 rounded text-[10px] text-cyan-400 hover:bg-space-800"
+                      className={`p-1 rounded text-[10px] transition-colors ${
+                        showCableSearch ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-cyan-300 hover:bg-space-850'
+                      }`}
                       title="Search Cables & Terminals"
                     >
-                      <Search className="w-3 h-3" />
+                      <Search className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => toggleLayer('submarineCables')}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        layers.submarineCables ? 'bg-cyan-500 text-black' : 'bg-space-800 text-slate-400'
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                        layers.submarineCables ? 'bg-cyan-500 text-black shadow-sm' : 'bg-space-800 text-slate-400 hover:text-slate-200'
                       }`}
                     >
                       {layers.submarineCables ? 'ON' : 'OFF'}
@@ -212,16 +217,16 @@ export const MapControls: React.FC = () => {
 
                 {/* Submarine Cable Search & Terminal Lookup Box */}
                 {showCableSearch && (
-                  <div className="pt-1.5 border-t border-slate-800 space-y-1.5 animate-in fade-in">
+                  <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-in fade-in">
                     <form onSubmit={handleSearchSubmit} className="relative w-full">
                       <input
                         type="text"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         placeholder="Search cable, landing terminal, country..."
-                        className="w-full pl-7 pr-6 py-1 rounded-lg bg-space-950 border border-slate-700 text-slate-200 placeholder-slate-500 text-[10px] focus:outline-none focus:border-cyan-500"
+                        className="w-full pl-7 pr-6 py-1.5 rounded-lg bg-space-950 border border-slate-700 text-slate-200 placeholder-slate-500 text-[10px] focus:outline-none focus:border-cyan-500 transition-colors shadow-inner"
                       />
-                      <Search className="w-3 h-3 text-slate-400 absolute left-2 top-2" />
+                      <Search className="w-3 h-3 text-slate-400 absolute left-2 top-2.5" />
                       {searchInput && (
                         <button
                           type="button"
@@ -237,14 +242,17 @@ export const MapControls: React.FC = () => {
                     </form>
 
                     {((searchResults?.cables?.length ?? 0) > 0 || (searchResults?.landing_points?.length ?? 0) > 0) && (
-                      <div className="p-1.5 rounded-lg bg-space-950 border border-slate-800 space-y-1 max-h-36 overflow-y-auto">
+                      <div className="p-1.5 rounded-lg bg-space-950 border border-slate-800 space-y-1.5 max-h-40 overflow-y-auto">
                         {searchResults.cables.length > 0 && (
                           <div className="space-y-0.5">
-                            <div className="text-[9px] text-cyan-400 font-bold uppercase">Cables ({searchResults.cables.length}):</div>
+                            <div className="text-[9px] text-cyan-400 font-bold uppercase flex items-center gap-1">
+                              <Globe className="w-2.5 h-2.5" />
+                              <span>Cables ({searchResults.cables.length}):</span>
+                            </div>
                             {searchResults.cables.map((c) => (
-                              <div key={c.id} className="p-1 rounded bg-space-900 text-[10px] flex justify-between">
-                                <span className="font-semibold text-slate-200">{c.name}</span>
-                                <span className="text-[9px] text-slate-400">{c.length || 'Active'}</span>
+                              <div key={c.id} className="p-1 rounded bg-space-900 text-[10px] flex justify-between items-center">
+                                <span className="font-semibold text-slate-200 truncate">{c.name}</span>
+                                <span className="text-[9px] text-slate-400 ml-1 flex-shrink-0">{c.length || 'Active'}</span>
                               </div>
                             ))}
                           </div>
@@ -252,21 +260,28 @@ export const MapControls: React.FC = () => {
 
                         {searchResults.landing_points.length > 0 && (
                           <div className="space-y-0.5 pt-1 border-t border-slate-800">
-                            <div className="text-[9px] text-sky-400 font-bold uppercase">Terminals ({searchResults.landing_points.length}):</div>
+                            <div className="text-[9px] text-sky-400 font-bold uppercase flex items-center gap-1">
+                              <Anchor className="w-2.5 h-2.5" />
+                              <span>Terminals ({searchResults.landing_points.length}):</span>
+                            </div>
                             {searchResults.landing_points.map((lp) => (
                               <button
                                 key={lp.id}
                                 onClick={() => lp.coordinates && handleSelectLandingPoint(lp.coordinates)}
-                                className="w-full text-left p-1 rounded hover:bg-space-850 flex justify-between text-[10px]"
+                                className="w-full text-left p-1 rounded hover:bg-space-850 flex justify-between items-center text-[10px] transition-colors"
                               >
-                                <span className="font-semibold text-slate-200">{lp.name}</span>
-                                <span className="text-[9px] text-sky-300">{lp.country || 'Terminal'}</span>
+                                <span className="font-semibold text-slate-200 truncate">{lp.name}</span>
+                                <span className="text-[9px] text-sky-300 ml-1 flex-shrink-0">{lp.country || 'Terminal'}</span>
                               </button>
                             ))}
                           </div>
                         )}
                       </div>
                     )}
+
+                    <div className="text-[8.5px] text-slate-500 text-center pt-1 border-t border-slate-800/60">
+                      Data: <strong className="text-slate-400">Gigawatt Map / TeleGeography</strong> &mdash; CC BY-NC-SA 3.0
+                    </div>
                   </div>
                 )}
               </div>

@@ -20,7 +20,6 @@ import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
 import { SubmarineCablesLayer } from './SubmarineCablesLayer';
-import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
 import { divIcon } from 'leaflet';
@@ -266,9 +265,6 @@ export const SatelliteMap: React.FC = () => {
 
       {/* Disaster Filter Control Bar */}
       <DisasterFilterBar />
-
-      {/* Global Maritime Infrastructure Movable Window */}
-      <MaritimeControlBar />
     </div>
   );
 };
