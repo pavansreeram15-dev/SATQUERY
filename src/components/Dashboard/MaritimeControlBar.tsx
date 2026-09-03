@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion, useDragControls } from 'framer-motion';
 import { useMap } from 'react-leaflet';
 import { useMapContext } from '../../context/MapContext';
 import { maritimeApi, GLOBAL_MARITIME_PORTS } from '../../services/maritimeApi';
@@ -23,6 +23,8 @@ import {
 export const MaritimeControlBar: React.FC = () => {
   const map = useMap();
   const { layers, toggleLayer, setViewportBBox, setDrawnBBox, setQueryResult } = useMapContext();
+  const dragControls = useDragControls();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'ports' | 'cables'>('ports');
@@ -32,6 +34,17 @@ export const MaritimeControlBar: React.FC = () => {
 
   const [ports, setPorts] = useState<MaritimePort[]>(GLOBAL_MARITIME_PORTS);
   const [cables, setCables] = useState<SubmarineCableFeature[]>(GLOBAL_SUBMARINE_CABLES_FALLBACK);
+
+  useEffect(() => {
+    if (panelRef.current) {
+      import('leaflet').then((L) => {
+        if (panelRef.current) {
+          L.DomEvent.disableClickPropagation(panelRef.current);
+          L.DomEvent.disableScrollPropagation(panelRef.current);
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -106,31 +119,37 @@ export const MaritimeControlBar: React.FC = () => {
 
   return (
     <motion.div
+      ref={panelRef}
       drag
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       dragElastic={0}
       className="absolute bottom-6 left-6 z-[450] select-none font-mono text-xs"
-      onPointerDownCapture={(e) => e.stopPropagation()}
     >
-      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-80 md:w-96 overflow-hidden flex flex-col">
+      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-80 md:w-96 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10">
         {/* Movable Grip Header */}
-        <div className="px-3.5 py-2.5 bg-space-900/90 border-b border-slate-800/80 flex items-center justify-between cursor-move">
-          <div className="flex items-center gap-2">
-            <GripHorizontal className="w-4 h-4 text-cyan-400/70" />
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group"
+          title="Drag to reposition window anywhere"
+        >
+          <div className="flex items-center gap-2 pointer-events-none">
+            <GripHorizontal className="w-4 h-4 text-cyan-400/80 group-hover:text-cyan-300 transition-colors" />
             <div className="flex items-center gap-1.5 font-bold text-cyan-300">
               <Globe className="w-4 h-4 text-cyan-400" />
               <span className="tracking-wide">MARITIME & GIGAWATT MAP</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-950 border border-cyan-500/50 text-cyan-300 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               LIVE
             </span>
             <button
               onClick={() => setIsMinimized(!isMinimized)}
-              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-space-800 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-space-800 transition-colors cursor-pointer"
               title={isMinimized ? 'Expand' : 'Minimize'}
             >
               {isMinimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
