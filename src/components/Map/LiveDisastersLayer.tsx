@@ -1,121 +1,36 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useMap } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
 import { useMapContext } from '../../context/MapContext';
 import { disasterService } from '../../services/disasterService';
-import { EarthEvent, DisasterGeoJSONFeature } from '../../types/disaster';
-import {
-  Radio,
-  ExternalLink,
-  Satellite,
-  Compass,
-  Clock,
-  ArrowUpRight,
-  Flame,
-  Activity,
-  Wind,
-  Droplets,
-  Mountain,
-  Sun,
-  AlertTriangle,
-} from 'lucide-react';
+import { EarthEvent, DisasterGeoJSONFeature, DisasterType } from '../../types/disaster';
 
-// Global Icon Cache to avoid recreating L.divIcon instances on every render tick
-const iconCache = new Map<string, L.DivIcon>();
+const HAZARD_COLORS: Record<string, string> = {
+  earthquake: '#EF4444', // Red
+  wildfire: '#F97316',   // Orange
+  cyclone: '#06B6D4',    // Cyan
+  storm: '#06B6D4',      // Cyan
+  flood: '#3B82F6',      // Blue
+  tsunami: '#3B82F6',    // Blue
+  volcano: '#DC2626',    // Crimson
+  drought: '#D97706',    // Amber
+  other: '#EAB308',      // Yellow
+};
 
-const getCachedMarkerIcon = (
-  type: string = 'other',
-  severity: string = 'moderate',
-  magnitude: number | string | undefined,
-  isSelected: boolean
-): L.DivIcon => {
-  const magKey = magnitude && type === 'earthquake' ? String(Number(magnitude).toFixed(1)) : '0';
-  const cacheKey = `${type}_${severity}_${magKey}_${isSelected ? '1' : '0'}`;
-
-  const cached = iconCache.get(cacheKey);
-  if (cached) return cached;
-
-  let bgGradient = 'from-amber-500 to-orange-600';
-  let borderColor = '#F59E0B';
-  let glowColor = 'rgba(245, 158, 11, 0.5)';
-  let symbol = '⚠️';
-
-  if (type === 'earthquake') {
-    symbol = '🔴';
-    const numMag = Number(magnitude) || 0;
-    if (severity === 'critical' || numMag >= 7.0) {
-      bgGradient = 'from-red-600 to-rose-950';
-      borderColor = '#EF4444';
-      glowColor = 'rgba(239, 68, 68, 0.7)';
-    } else if (severity === 'severe' || numMag >= 6.0) {
-      bgGradient = 'from-rose-500 to-red-700';
-      borderColor = '#F43F5E';
-      glowColor = 'rgba(244, 63, 94, 0.6)';
-    } else if (severity === 'major' || numMag >= 4.5) {
-      bgGradient = 'from-orange-500 to-amber-600';
-      borderColor = '#F97316';
-      glowColor = 'rgba(249, 115, 22, 0.5)';
-    } else {
-      bgGradient = 'from-yellow-400 to-amber-500';
-      borderColor = '#EAB308';
-      glowColor = 'rgba(234, 179, 8, 0.4)';
-    }
-  } else if (type === 'wildfire') {
-    symbol = '🔥';
-    bgGradient = 'from-orange-500 via-red-600 to-amber-600';
-    borderColor = '#EF4444';
-    glowColor = 'rgba(239, 68, 68, 0.6)';
-  } else if (type === 'drought') {
-    symbol = '☀️';
-    bgGradient = 'from-amber-600 via-yellow-600 to-amber-800';
-    borderColor = '#D97706';
-    glowColor = 'rgba(217, 119, 6, 0.6)';
-  } else if (type === 'volcano') {
-    symbol = '🌋';
-    bgGradient = 'from-red-700 via-rose-800 to-space-950';
-    borderColor = '#DC2626';
-    glowColor = 'rgba(220, 38, 38, 0.6)';
-  } else if (type === 'cyclone' || type === 'storm') {
-    symbol = '🌀';
-    bgGradient = 'from-cyan-500 via-blue-600 to-indigo-700';
-    borderColor = '#06B6D4';
-    glowColor = 'rgba(6, 182, 212, 0.6)';
-  } else if (type === 'flood' || type === 'tsunami') {
-    symbol = '🌊';
-    bgGradient = 'from-blue-500 to-indigo-700';
-    borderColor = '#3B82F6';
-    glowColor = 'rgba(59, 130, 246, 0.6)';
-  }
-
-  const html = `
-    <div class="relative flex items-center justify-center cursor-pointer transition-transform duration-150 ${
-      isSelected ? 'scale-125 z-50' : 'hover:scale-110'
-    }">
-      <div class="w-7 h-7 rounded-full bg-gradient-to-br ${bgGradient} border-2 shadow-xl flex items-center justify-center text-xs text-white font-bold" style="border-color: ${
-    isSelected ? '#38BDF8' : borderColor
-  }; box-shadow: 0 0 10px ${glowColor};">
-        <span style="font-size: 11px; line-height: 1;">${symbol}</span>
-      </div>
-      ${
-        magnitude && type === 'earthquake'
-          ? `<div class="absolute -bottom-2 px-1 rounded bg-space-950/90 border border-slate-700 text-[8px] font-mono text-cyan-300 font-bold leading-tight shadow-md">M${Number(
-              magnitude
-            ).toFixed(1)}</div>`
-          : ''
-      }
-    </div>
-  `;
-
-  const newIcon = L.divIcon({
-    html,
-    className: 'satquery-disaster-div-icon',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-
-  iconCache.set(cacheKey, newIcon);
-  return newIcon;
+const HAZARD_ICONS: Record<string, string> = {
+  earthquake: '🔴',
+  wildfire: '🔥',
+  cyclone: '🌀',
+  storm: '🌀',
+  flood: '🌊',
+  tsunami: '🌊',
+  volcano: '🌋',
+  drought: '☀️',
+  other: '⚠️',
 };
 
 export const LiveDisastersLayer: React.FC = () => {
@@ -130,29 +45,26 @@ export const LiveDisastersLayer: React.FC = () => {
     triggerSatelliteAnalysisForDisaster,
   } = useMapContext();
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const clusterGroupRef = useRef<any>(null);
+  const canvasRendererRef = useRef<L.Canvas>(L.canvas({ padding: 0.5 }));
 
-  // Load live disaster telemetry with cancellation and fallback
+  // 1. Initial Data Fetch & Periodic Background Sync
   useEffect(() => {
     let isMounted = true;
 
     const loadDisasters = async () => {
       try {
-        setLoading(true);
         const data = await disasterService.getLiveDisasters(disasterFilters);
-        if (isMounted && data && setDisastersData) {
+        if (isMounted && data && data.features && data.features.length > 0 && setDisastersData) {
           setDisastersData(data);
         }
       } catch (err) {
         console.warn('[LiveDisastersLayer] Disasters fetch warning:', err);
-      } finally {
-        if (isMounted) setLoading(false);
       }
     };
 
     loadDisasters();
 
-    // Setup periodic polling interval (every 60s)
     const pollInterval = setInterval(() => {
       if (isMounted && layers?.liveDisasters) {
         loadDisasters();
@@ -165,6 +77,7 @@ export const LiveDisastersLayer: React.FC = () => {
     };
   }, [disasterFilters?.timeRange, disasterFilters?.selectedSource, setDisastersData, layers?.liveDisasters]);
 
+  // 2. Filter raw features based on active user filters
   const features = disastersData?.features || [];
   const filters = disasterFilters || {
     timeRange: '24h',
@@ -177,7 +90,6 @@ export const LiveDisastersLayer: React.FC = () => {
   const selectedTypes = filters.selectedTypes || [];
   const selectedSeverities = filters.selectedSeverities || [];
 
-  // Filter features reliably across sources, hazard types, and search queries
   const filteredFeatures = useMemo(() => {
     if (!layers?.liveDisasters || !features || features.length === 0) {
       return [];
@@ -189,6 +101,11 @@ export const LiveDisastersLayer: React.FC = () => {
       const feat = features[i];
       if (!feat || !feat.properties) continue;
       const p = feat.properties;
+
+      // Coordinate validation
+      const lat = typeof p.latitude === 'number' ? p.latitude : (feat.geometry?.coordinates?.[1] ?? null);
+      const lon = typeof p.longitude === 'number' ? p.longitude : (feat.geometry?.coordinates?.[0] ?? null);
+      if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) continue;
 
       // 1. Data Source Filter
       if (filters.selectedSource && filters.selectedSource !== 'ALL') {
@@ -218,221 +135,200 @@ export const LiveDisastersLayer: React.FC = () => {
       }
 
       matched.push(feat);
-      if (matched.length >= 200) break;
     }
 
     return matched;
   }, [features, selectedTypes, selectedSeverities, filters.searchQuery, filters.selectedSource, layers?.liveDisasters]);
 
-  const handleSelectEvent = useCallback(
-    (props: DisasterGeoJSONFeature['properties']) => {
-      if (!props || !setSelectedDisaster) return;
-      const eventObj: EarthEvent = {
-        id: props.id,
-        source: props.source || 'USGS',
-        sources: props.sources || [props.source || 'USGS'],
-        type: props.type || 'other',
-        title: props.title || 'Earth Event',
-        description: props.description,
-        latitude: props.latitude,
-        longitude: props.longitude,
-        magnitude: props.magnitude,
-        depth_km: props.depth_km,
-        severity: props.severity || 'moderate',
-        alert_level: props.alert_level || 'green',
-        confidence: props.confidence,
-        start_time: props.start_time,
-        updated_time: props.updated_time,
-        country: props.country,
-        region: props.region,
-        source_url: props.source_url,
-      };
+  // 3. Helper to format EarthEvent
+  const buildEventObject = useCallback((p: DisasterGeoJSONFeature['properties'], lat: number, lon: number): EarthEvent => {
+    return {
+      id: p.id,
+      source: p.source || 'USGS',
+      sources: p.sources || [p.source || 'USGS'],
+      type: p.type || 'other',
+      title: p.title || 'Earth Event',
+      description: p.description,
+      latitude: lat,
+      longitude: lon,
+      magnitude: p.magnitude,
+      depth_km: p.depth_km,
+      severity: p.severity || 'moderate',
+      alert_level: p.alert_level || 'green',
+      confidence: p.confidence ?? 0.95,
+      start_time: p.start_time,
+      updated_time: p.updated_time,
+      country: p.country,
+      region: p.region,
+      source_url: p.source_url,
+    };
+  }, []);
 
-      setSelectedDisaster(eventObj);
-    },
-    [setSelectedDisaster]
-  );
+  // 4. Render HTML5 Canvas CircleMarkers with MarkerCluster
+  useEffect(() => {
+    if (!map) return;
 
-  const handleAnalyzeSatellite = useCallback(
-    (props: DisasterGeoJSONFeature['properties']) => {
-      if (!props) return;
-      const eventObj: EarthEvent = {
-        id: props.id,
-        source: props.source || 'USGS',
-        sources: props.sources || [props.source || 'USGS'],
-        type: props.type || 'other',
-        title: props.title || 'Earth Event',
-        description: props.description,
-        latitude: props.latitude,
-        longitude: props.longitude,
-        magnitude: props.magnitude,
-        depth_km: props.depth_km,
-        severity: props.severity || 'moderate',
-        alert_level: props.alert_level || 'green',
-        confidence: props.confidence,
-        start_time: props.start_time,
-        updated_time: props.updated_time,
-        country: props.country,
-        region: props.region,
-        source_url: props.source_url,
-      };
-
-      if (triggerSatelliteAnalysisForDisaster) {
-        triggerSatelliteAnalysisForDisaster(eventObj);
+    // Initialize or clear previous cluster group to prevent memory leaks
+    if (clusterGroupRef.current) {
+      clusterGroupRef.current.clearLayers();
+      if (map.hasLayer(clusterGroupRef.current)) {
+        map.removeLayer(clusterGroupRef.current);
       }
-      if (typeof props.latitude === 'number' && typeof props.longitude === 'number') {
-        map.flyTo([props.latitude, props.longitude], 12, { duration: 1.4 });
+      clusterGroupRef.current = null;
+    }
+
+    if (!layers?.liveDisasters || filteredFeatures.length === 0) {
+      return;
+    }
+
+    // Create marker cluster group with HTML5 Canvas chunkedLoading configuration
+    const clusterGroup = (L as any).markerClusterGroup({
+      chunkedLoading: true,
+      chunkInterval: 100,
+      chunkDelay: 10,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: false,
+      disableClusteringAtZoom: 15,
+      maxClusterRadius: 40,
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        const size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
+        return L.divIcon({
+          html: `<div class="satquery-cluster satquery-cluster-${size}"><span>${count}</span></div>`,
+          className: 'satquery-cluster-wrapper',
+          iconSize: L.point(36, 36),
+        });
+      },
+    });
+
+    const renderer = canvasRendererRef.current;
+
+    filteredFeatures.forEach((feat) => {
+      const p = feat.properties;
+      const lat = typeof p.latitude === 'number' ? p.latitude : feat.geometry?.coordinates?.[1];
+      const lon = typeof p.longitude === 'number' ? p.longitude : feat.geometry?.coordinates?.[0];
+      if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) return;
+
+      const eventObj = buildEventObject(p, lat, lon);
+      const color = HAZARD_COLORS[p.type] || HAZARD_COLORS.other;
+      const iconSymbol = HAZARD_ICONS[p.type] || '⚠️';
+      const isSelected = selectedDisaster?.id === p.id;
+
+      // Render via HTML5 Canvas for super-smooth 60fps performance without DOM overload
+      const marker = L.circleMarker([lat, lon], {
+        renderer,
+        radius: isSelected ? 11 : 8,
+        color: isSelected ? '#38bdf8' : '#ffffff',
+        weight: isSelected ? 2.5 : 1.5,
+        fillColor: color,
+        fillOpacity: isSelected ? 1.0 : 0.85,
+      });
+
+      // Quick hover tooltip
+      marker.bindTooltip(
+        `<div style="font-family: monospace; font-size: 11px; font-weight: bold; color: #f8fafc;">
+          ${iconSymbol} ${p.title || 'Disaster Event'}
+        </div>`,
+        { direction: 'top', offset: [0, -6], className: 'satquery-map-tooltip' }
+      );
+
+      // Rich detailed popup
+      const popupHtml = `
+        <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #020617; padding: 12px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.8); min-width: 250px; max-width: 300px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: ${color};">
+              <span>${iconSymbol}</span>
+              <span style="text-transform: uppercase; font-size: 10px;">${p.type || 'EARTH'} EVENT</span>
+            </div>
+            <span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #0f172a; border: 1px solid #334155; color: ${color};">
+              ${p.severity || 'MODERATE'}
+            </span>
+          </div>
+
+          <div style="font-family: sans-serif; font-weight: bold; font-size: 12px; line-height: 1.3; color: #f1f5f9; margin-bottom: 6px;">
+            ${p.title || 'Earth Observation Event'}
+          </div>
+
+          <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+            <span>📍 ${lat.toFixed(3)}°, ${lon.toFixed(3)}°</span>
+            ${p.country ? `<span>• ${p.country}</span>` : ''}
+          </div>
+
+          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+            ${
+              p.magnitude !== undefined && p.magnitude !== null
+                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span style="color: #64748b;">${p.type === 'earthquake' ? 'Magnitude' : 'Intensity'}:</span>
+                    <strong style="color: #f59e0b;">${p.type === 'earthquake' ? `M${Number(p.magnitude).toFixed(1)}` : p.magnitude}</strong>
+                  </div>`
+                : ''
+            }
+            ${
+              p.depth_km !== undefined && p.depth_km !== null
+                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span style="color: #64748b;">Depth:</span>
+                    <strong style="color: #cbd5e1;">${Number(p.depth_km).toFixed(1)} km</strong>
+                  </div>`
+                : ''
+            }
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748b;">Sources:</span>
+              <strong style="color: #38bdf8;">${(p.sources || [p.source || 'USGS']).join(', ')}</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
+            <button id="btn-sat-analyze-${p.id}" style="flex: 1; padding: 6px 10px; background: #0891b2; hover: background: #06b6d4; color: #000000; font-weight: bold; font-size: 10px; border-radius: 6px; border: none; cursor: pointer;">
+              🛰️ Analyze Satellite
+            </button>
+            ${
+              p.source_url
+                ? `<a href="${p.source_url}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; padding: 6px 8px; background: #1e293b; color: #cbd5e1; border-radius: 6px; border: 1px solid #334155; text-decoration: none; font-size: 10px;">
+                    ↗ Source
+                  </a>`
+                : ''
+            }
+          </div>
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml, { className: 'satquery-custom-popup', maxWidth: 320 });
+
+      // Handle popup interactions & satellite analysis trigger
+      marker.on('popupopen', () => {
+        const analyzeBtn = document.getElementById(`btn-sat-analyze-${p.id}`);
+        if (analyzeBtn) {
+          analyzeBtn.onclick = () => {
+            if (triggerSatelliteAnalysisForDisaster) {
+              triggerSatelliteAnalysisForDisaster(eventObj);
+            }
+            map.flyTo([lat, lon], 12, { duration: 1.2 });
+          };
+        }
+      });
+
+      marker.on('click', () => {
+        if (setSelectedDisaster) {
+          setSelectedDisaster(eventObj);
+        }
+      });
+
+      clusterGroup.addLayer(marker);
+    });
+
+    map.addLayer(clusterGroup);
+    clusterGroupRef.current = clusterGroup;
+
+    return () => {
+      if (clusterGroupRef.current) {
+        clusterGroupRef.current.clearLayers();
+        if (map.hasLayer(clusterGroupRef.current)) {
+          map.removeLayer(clusterGroupRef.current);
+        }
+        clusterGroupRef.current = null;
       }
-    },
-    [triggerSatelliteAnalysisForDisaster, map]
-  );
+    };
+  }, [map, filteredFeatures, layers?.liveDisasters, selectedDisaster?.id, buildEventObject, setSelectedDisaster, triggerSatelliteAnalysisForDisaster]);
 
-  if (!layers?.liveDisasters || filteredFeatures.length === 0) return null;
-
-  return (
-    <>
-      {filteredFeatures.map((feat) => {
-        if (!feat || !feat.properties) return null;
-        const p = feat.properties;
-        const lat = typeof p.latitude === 'number' ? p.latitude : (feat.geometry?.coordinates?.[1] ?? null);
-        const lon = typeof p.longitude === 'number' ? p.longitude : (feat.geometry?.coordinates?.[0] ?? null);
-
-        if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) return null;
-        const coords: [number, number] = [lat, lon];
-        const isSelected = selectedDisaster?.id === p.id;
-        const icon = getCachedMarkerIcon(p.type, p.severity, p.magnitude, isSelected);
-
-        return (
-          <Marker
-            key={feat.id || `${lat}_${lon}`}
-            position={coords}
-            icon={icon}
-            eventHandlers={{
-              click: () => handleSelectEvent(p),
-            }}
-          >
-            <Popup className="satquery-custom-popup">
-              <div className="p-3 font-mono text-xs text-slate-100 bg-space-950 rounded-xl border border-cyan-500/50 shadow-2xl min-w-[260px] max-w-xs">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                  <div className="flex items-center gap-1.5 font-bold text-cyan-300">
-                    <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-                    <span className="uppercase text-[10px] tracking-wide">{p.type || 'EARTH'} EVENT</span>
-                  </div>
-                  <span
-                    className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
-                      p.alert_level === 'red'
-                        ? 'bg-rose-950/80 border border-rose-500/60 text-rose-300'
-                        : p.alert_level === 'orange'
-                        ? 'bg-amber-950/80 border border-amber-500/60 text-amber-300'
-                        : 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300'
-                    }`}
-                  >
-                    {p.severity || 'MODERATE'}
-                  </span>
-                </div>
-
-                {/* Event Title */}
-                <div className="pt-2 font-sans font-bold text-xs text-slate-100 leading-snug">
-                  {p.title || 'Earth Observation Event'}
-                </div>
-
-                {/* Location & Coordinates */}
-                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <Compass className="w-3 h-3 text-cyan-400" />
-                  <span>
-                    {lat.toFixed(3)}°, {lon.toFixed(3)}°
-                  </span>
-                  {p.country && <span>&bull; {p.country}</span>}
-                </div>
-
-                {/* Quantitative Telemetry */}
-                <div className="mt-2 p-2 rounded-lg bg-space-900/80 border border-slate-800 space-y-1 text-[11px]">
-                  {p.magnitude !== undefined && p.magnitude !== null && (typeof p.magnitude === 'number' ? p.magnitude > 0 : p.magnitude !== '0') ? (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">
-                        {p.type === 'earthquake' ? 'Magnitude:' : p.type === 'wildfire' ? 'Radiative Power:' : 'Intensity:'}
-                      </span>
-                      <span className="font-bold text-amber-300 font-mono">
-                        {p.type === 'earthquake' ? `M${typeof p.magnitude === 'number' ? p.magnitude.toFixed(1) : p.magnitude}` : `${p.magnitude} ${p.type === 'wildfire' ? 'MW' : ''}`}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Alert Tier:</span>
-                      <span className="font-bold text-rose-300 font-mono">
-                        {p.alert_level === 'red' || p.severity === 'critical' ? 'Red Alert Level' : 'Monitored Severity'}
-                      </span>
-                    </div>
-                  )}
-
-                  {p.depth_km !== undefined && p.depth_km !== null && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Hypocenter Depth:</span>
-                      <span className="font-bold text-slate-200 font-mono">
-                        {typeof p.depth_km === 'number' ? p.depth_km.toFixed(1) : p.depth_km} km
-                      </span>
-                    </div>
-                  )}
-
-                  {p.start_time && (
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-500" /> Time:
-                      </span>
-                      <span className="text-slate-300">
-                        {new Date(p.start_time).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center text-[10px] pt-0.5 border-t border-slate-800">
-                    <span className="text-slate-500">Data Sources:</span>
-                    <div className="flex items-center gap-1">
-                      {(p.sources || [p.source || 'USGS']).map((s) => (
-                        <span key={s} className="px-1 py-0.2 rounded bg-space-850 border border-slate-700 text-[9px] text-cyan-300 font-bold">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="mt-2.5 pt-2 border-t border-slate-800 flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleAnalyzeSatellite(p)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-semibold text-[10px] transition-all shadow-md cursor-pointer"
-                  >
-                    <Satellite className="w-3.5 h-3.5" />
-                    <span>Analyze Satellite</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSelectEvent(p)}
-                    className="flex items-center justify-center p-1.5 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-white transition-all text-[10px] cursor-pointer"
-                    title="View Full Intelligence Details"
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  {p.source_url && (
-                    <a
-                      href={p.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center p-1.5 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-cyan-300 transition-all text-[10px]"
-                      title="Open Official Provider Source"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        );
-      })}
-    </>
-  );
+  return null;
 };
