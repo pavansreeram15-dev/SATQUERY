@@ -1,17 +1,6 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-
-// Ensure global Leaflet is defined before evaluating plugin
-if (typeof window !== 'undefined') {
-  (window as any).L = L;
-  (globalThis as any).L = L;
-}
-
-import 'leaflet.markercluster';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-
 import { useMapContext } from '../../context/MapContext';
 import { disasterService } from '../../services/disasterService';
 import { EarthEvent, DisasterGeoJSONFeature } from '../../types/disaster';
@@ -52,7 +41,7 @@ export const LiveDisastersLayer: React.FC = () => {
     triggerSatelliteAnalysisForDisaster,
   } = useMapContext();
 
-  const clusterGroupRef = useRef<any>(null);
+  const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const canvasRendererRef = useRef<L.Canvas | null>(null);
 
   // Initialize canvas renderer safely
@@ -176,48 +165,24 @@ export const LiveDisastersLayer: React.FC = () => {
     };
   }, []);
 
-  // 4. Render HTML5 Canvas CircleMarkers with MarkerCluster
+  // 4. Render HTML5 Canvas CircleMarkers with clean memory management
   useEffect(() => {
     if (!map) return;
 
-    // Initialize or clear previous cluster group to prevent memory leaks
-    if (clusterGroupRef.current) {
-      clusterGroupRef.current.clearLayers();
-      if (map.hasLayer(clusterGroupRef.current)) {
-        map.removeLayer(clusterGroupRef.current);
+    // Clean up previous layer group
+    if (layerGroupRef.current) {
+      layerGroupRef.current.clearLayers();
+      if (map.hasLayer(layerGroupRef.current)) {
+        map.removeLayer(layerGroupRef.current);
       }
-      clusterGroupRef.current = null;
+      layerGroupRef.current = null;
     }
 
     if (!layers?.liveDisasters || filteredFeatures.length === 0) {
       return;
     }
 
-    // Create marker cluster group with HTML5 Canvas chunkedLoading configuration
-    let clusterGroup: any;
-    if (typeof (L as any).markerClusterGroup === 'function') {
-      clusterGroup = (L as any).markerClusterGroup({
-        chunkedLoading: true,
-        chunkInterval: 100,
-        chunkDelay: 10,
-        showCoverageOnHover: false,
-        spiderfyOnMaxZoom: false,
-        disableClusteringAtZoom: 15,
-        maxClusterRadius: 40,
-        iconCreateFunction: (cluster: any) => {
-          const count = cluster.getChildCount();
-          const size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
-          return L.divIcon({
-            html: `<div class="satquery-cluster satquery-cluster-${size}"><span>${count}</span></div>`,
-            className: 'satquery-cluster-wrapper',
-            iconSize: L.point(36, 36),
-          });
-        },
-      });
-    } else {
-      clusterGroup = L.featureGroup();
-    }
-
+    const layerGroup = L.layerGroup();
     const renderer = canvasRendererRef.current || L.canvas({ padding: 0.5 });
 
     filteredFeatures.forEach((feat) => {
@@ -231,10 +196,10 @@ export const LiveDisastersLayer: React.FC = () => {
       const iconSymbol = HAZARD_ICONS[p.type] || '⚠️';
       const isSelected = selectedDisaster?.id === p.id;
 
-      // Render via HTML5 Canvas for super-smooth 60fps performance without DOM overload
+      // Ultra-fast Hardware-Accelerated HTML5 Canvas CircleMarker
       const marker = L.circleMarker([lat, lon], {
         renderer,
-        radius: isSelected ? 11 : 8,
+        radius: isSelected ? 12 : 8,
         color: isSelected ? '#38bdf8' : '#ffffff',
         weight: isSelected ? 2.5 : 1.5,
         fillColor: color,
@@ -330,19 +295,19 @@ export const LiveDisastersLayer: React.FC = () => {
         }
       });
 
-      clusterGroup.addLayer(marker);
+      layerGroup.addLayer(marker);
     });
 
-    map.addLayer(clusterGroup);
-    clusterGroupRef.current = clusterGroup;
+    map.addLayer(layerGroup);
+    layerGroupRef.current = layerGroup;
 
     return () => {
-      if (clusterGroupRef.current) {
-        clusterGroupRef.current.clearLayers();
-        if (map.hasLayer(clusterGroupRef.current)) {
-          map.removeLayer(clusterGroupRef.current);
+      if (layerGroupRef.current) {
+        layerGroupRef.current.clearLayers();
+        if (map.hasLayer(layerGroupRef.current)) {
+          map.removeLayer(layerGroupRef.current);
         }
-        clusterGroupRef.current = null;
+        layerGroupRef.current = null;
       }
     };
   }, [map, filteredFeatures, layers?.liveDisasters, selectedDisaster?.id, buildEventObject, setSelectedDisaster, triggerSatelliteAnalysisForDisaster]);
