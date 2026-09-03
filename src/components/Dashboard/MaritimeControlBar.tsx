@@ -66,12 +66,13 @@ export const MaritimeControlBar: React.FC = () => {
     <motion.div
       drag
       dragMomentum={false}
-      className="absolute top-4 left-14 z-[500] max-w-sm w-80 sm:w-96 select-none pointer-events-auto"
+      dragElastic={0}
+      className="absolute top-4 left-14 z-[500] max-w-sm w-80 sm:w-96 select-none pointer-events-auto cursor-grab active:cursor-grabbing"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono">
         {/* Movable Window Header (Drag Handle) */}
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 cursor-grab active:cursor-grabbing">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
           <div className="flex items-center gap-2">
             <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
@@ -93,7 +94,10 @@ export const MaritimeControlBar: React.FC = () => {
 
             {/* X Close Button */}
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+              }}
               className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               title="Close Window"
             >
