@@ -32,15 +32,15 @@ class FloodAnalysisService:
             status = "DEMO"
             severity = "NONE" if not is_validated_disaster_zone else "MODERATE"
             risk_protocol = "DEMO_SIMULATION"
-        elif not is_validated_disaster_zone and anomaly_ratio < 0.05:
-            # Permanent water bodies, rivers, lakes, reservoirs, coastlines
-            status = "NORMAL"
-            severity = "NONE"
-            risk_protocol = "ROUTINE_MONITORING"
-        elif anomaly_ratio >= 0.30 and is_validated_disaster_zone:
-            status = "CRITICAL"
-            severity = "CRITICAL"
-            risk_protocol = "EMERGENCY_EVACUATION"
+        elif is_validated_disaster_zone:
+            if anomaly_ratio >= 0.10:
+                status = "CRITICAL"
+                severity = "CRITICAL"
+                risk_protocol = "EMERGENCY_EVACUATION"
+            else:
+                status = "HIGH_RISK"
+                severity = "HIGH"
+                risk_protocol = "DISASTER_ALERT"
         elif anomaly_ratio >= 0.15:
             status = "HIGH_RISK"
             severity = "HIGH"
