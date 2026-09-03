@@ -27,10 +27,11 @@ import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
 import { divIcon } from 'leaflet';
 import { SAMPLE_REGIONS } from '../../config/sampleRegions';
 
-// Subcomponent to handle interactive AOI drawing on map
+// Subcomponent to handle interactive AOI drawing on map (Box & Custom Polygon)
 const MapDrawingHandler: React.FC = () => {
-  const { drawMode, setDrawnBBox, setDrawnPolygon, setIsDrawingBBox } = useMapContext();
+  const { drawMode, setDrawMode, setDrawnBBox, setDrawnPolygon, setIsDrawingBBox } = useMapContext();
   const [startPoint, setStartPoint] = useState<[number, number] | null>(null);
+  const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([]);
 
   useMapEvents({
     click: (e) => {
@@ -49,14 +50,48 @@ const MapDrawingHandler: React.FC = () => {
             Number(maxLng.toFixed(4)),
             Number(maxLat.toFixed(4)),
           ]);
+          setDrawnPolygon(null);
           setStartPoint(null);
           setIsDrawingBBox(false);
+          setDrawMode(null);
+        }
+      } else if (drawMode === 'polygon') {
+        const newPts: [number, number][] = [...polygonPoints, [e.latlng.lat, e.latlng.lng]];
+        setPolygonPoints(newPts);
+        setIsDrawingBBox(true);
+        if (newPts.length >= 3) {
+          setDrawnPolygon(newPts);
         }
       }
     },
+    dblclick: () => {
+      if (drawMode === 'polygon' && polygonPoints.length >= 3) {
+        setDrawnPolygon(polygonPoints);
+        setDrawnBBox(null);
+        setPolygonPoints([]);
+        setIsDrawingBBox(false);
+        setDrawMode(null);
+      }
+    }
   });
 
-  return null;
+  return (
+    <>
+      {/* Temporary preview polygon while user is clicking vertices */}
+      {drawMode === 'polygon' && polygonPoints.length >= 2 && (
+        <Polygon
+          positions={polygonPoints}
+          pathOptions={{
+            color: '#38BDF8',
+            weight: 2,
+            dashArray: '4, 4',
+            fillColor: '#0284C7',
+            fillOpacity: 0.15
+          }}
+        />
+      )}
+    </>
+  );
 };
 
 // Subcomponent to animate and synchronize map center/zoom with active region, search location, or survey AOI

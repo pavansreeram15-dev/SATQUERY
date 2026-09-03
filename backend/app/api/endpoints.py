@@ -10,6 +10,7 @@ from .routes.ais import router as ais_router
 from .routes.maritime import router as maritime_router
 from .routes.cables import router as cables_router
 from .routes.geonames import router as geonames_router
+from .routes.air_quality import router as air_quality_router
 
 router = APIRouter()
 
@@ -21,6 +22,7 @@ router.include_router(analysis_router)
 router.include_router(change_detection_router)
 router.include_router(ai_router)
 router.include_router(geocoding_router)
+router.include_router(air_quality_router, tags=["Air Quality & Atmosphere"])
 router.include_router(geonames_router, prefix="/geonames", tags=["GeoNames Gazetteer & Elevation"])
 router.include_router(ais_router, prefix="/ais", tags=["AIS Maritime Tracking"])
 router.include_router(maritime_router, prefix="/maritime", tags=["Maritime Infrastructure"])
