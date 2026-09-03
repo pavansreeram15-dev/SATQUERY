@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Share2,
   Sun,
-  ShieldAlert
+  ShieldAlert,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DisasterInfoPanel: React.FC = () => {

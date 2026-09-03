@@ -18,6 +18,7 @@ import {
   Layers,
   Sparkles,
   SunMedium,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const TIME_OPTIONS: { label: string; value: TimeRangeOption }[] = [
@@ -273,6 +274,7 @@ export const DisasterFilterBar: React.FC = () => {
           <div className="pt-2 border-t border-slate-800 text-[9px] text-slate-500 flex items-center justify-between">
             <span>Sources: USGS · EONET · FIRMS · GDACS</span>
             <span className="text-cyan-400 font-bold">WGS84</span>
+          </div>
         </div>
       )}
     </motion.div>
