@@ -126,6 +126,19 @@ export const MaritimeControlBar: React.FC<MaritimeControlBarProps> = ({
           </button>
 
           <button
+            onClick={() => toggleLayer('aisSatelliteCorrelation')}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-bold text-[10px] transition-all border ${
+              layers.aisSatelliteCorrelation
+                ? 'bg-purple-950/90 border-purple-500/50 text-purple-300 shadow-sm'
+                : 'bg-space-850 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Correlate real-time AIS vessels with satellite SAR vessel detections"
+          >
+            <Link2 className="w-3.5 h-3.5 text-purple-400" />
+            <span>🔗 AIS ↔ Sat Correlation</span>
+          </button>
+
+          <button
             onClick={() => toggleLayer('submarineCables')}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-bold text-[10px] transition-all border ${
               layers.submarineCables
