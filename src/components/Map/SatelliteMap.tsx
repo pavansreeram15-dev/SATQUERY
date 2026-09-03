@@ -20,6 +20,7 @@ import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
 import { MaritimeInfrastructureLayer } from './MaritimeInfrastructureLayer';
+import { SubmarineCablesLayer } from './SubmarineCablesLayer';
 import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
@@ -182,6 +183,7 @@ export const SatelliteMap: React.FC = () => {
         <ChangeLayer />
         <LiveDisastersLayer />
         <MaritimeInfrastructureLayer />
+        <SubmarineCablesLayer />
 
         {/* Active Search Location Pin */}
         {searchLocation && (

@@ -152,6 +152,13 @@ export const MapControls: React.FC = () => {
                 onToggle={() => toggleLayer('maritimeInfrastructure')}
               />
 
+              <LayerToggleItem
+                label="Gigawatt Submarine Cables (Fiber Optic)"
+                active={Boolean(layers.submarineCables)}
+                color="#38BDF8"
+                onToggle={() => toggleLayer('submarineCables')}
+              />
+
               <div className="text-[10px] font-bold uppercase text-slate-500 pt-2 border-t border-slate-800/80">
                 ISRO Bhuvan Thematic WMS
               </div>

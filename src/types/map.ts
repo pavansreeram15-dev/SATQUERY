@@ -48,4 +48,5 @@ export interface ActiveLayerState {
   liveAisVessels?: boolean;
   aisSatelliteCorrelation?: boolean;
   maritimeInfrastructure?: boolean;
+  submarineCables?: boolean;
 }

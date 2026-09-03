@@ -7,3 +7,4 @@ export * from './geo';
 export * from './ai';
 export * from './analysis';
 export * from './maritime';
+export * from './cable';

@@ -29,8 +29,8 @@ def classify_intent(prompt: str, persona: UserPersona = UserPersona.PUBLIC_RESEA
     if re.search(r'\b(ndwi|water bod|reservoir|lake|river|water extent|wetland|estuary|aquatic|shoreline|coastal change)\b', text):
         return QueryIntent.NDWI_ANALYSIS, 0.93
 
-    # 6. Maritime & Live AIS Vessel queries
-    if re.search(r'\b(vessel|vessels|ais|ship tracking|maritime|ship mmsi|mmsi|track this vessel|vessels matching|vessels near|cargo ship|cargo ships|tanker|tankers|suez canal|panama canal|port of)\b', text):
+    # 6. Maritime, Live AIS Vessel & Gigawatt Submarine Cable queries
+    if re.search(r'\b(vessel|vessels|ais|ship tracking|maritime|ship mmsi|mmsi|track this vessel|vessels matching|vessels near|cargo ship|cargo ships|tanker|tankers|suez canal|panama canal|port of|cable|cables|submarine cable|landing point|fiber optic|gigawatt)\b', text):
         return QueryIntent.MARITIME_VESSEL_TRACKING, 0.95
 
     # 7. Spectral & SAR analysis

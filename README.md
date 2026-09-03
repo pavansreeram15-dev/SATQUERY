@@ -95,6 +95,7 @@ SATQUERY AI connects to **9 public and specialized Earth Observation and environ
 | **USGS Earthquake Hazards** | Global seismic events, Richter magnitude, hypocenter depth | **Keyless / Completely Free** (Public GeoJSON Feed) | 🟢 Live |
 | **NASA EONET** | Wildfires, volcanic eruptions, tropical cyclones, storms | **Keyless / Completely Free** (Public REST API) | 🟢 Live |
 | **AISStream.io** | Live global AIS maritime vessel telemetry, MMSI tracking, vessel classification | **Backend Key Required** (`AISSTREAM_API_KEY`) | 🟢 Live |
+| **Gigawatt Map / TeleGeography** | Global submarine fiber optic cable routes & landing point terminals | **Keyless / Free** (`CC BY-NC-SA 3.0, non-commercial`) | 🟢 Live |
 | **Google Earth Engine** | Planetary-scale multi-decadal composites & Dynamic World | **Service Account Key** (`GEE_SERVICE_ACCOUNT`) | 🟢 Live / Local Fallback |
 
 ---
@@ -158,10 +159,18 @@ Synthesize multi-paragraph scientific intelligence briefing via Google Gemini Fr
 ### 6. `GET /api/providers/health`
 Returns real-time connection status across all data & intelligence providers.
 
-### 7. `GET /api/ais/vessels`
+### 7. `GET /api/maritime/ports`
+Global seaports, container terminals, and maritime infrastructure GeoJSON with UN/LOCODE, annual TEU throughput, berth counts, and BBOX filtering.
+
+### 8. `GET /api/maritime/cables` & `GET /api/maritime/landing-points`
+Proxies and caches global submarine fiber optic cable routes & landing terminals from Gigawatt Map & TeleGeography (`CC BY-NC-SA 3.0, non-commercial`). Keyless public access.
+- **Parameters**: `bbox` (optional string `"min_lon,min_lat,max_lon,max_lat"`).
+- **Response**: GeoJSON `FeatureCollection` of LineStrings/MultiLineStrings and landing point markers.
+
+### 9. `GET /api/ais/vessels`
 Live AIS vessel tracking telemetry via AISStream.io. Filterable by map BBOX, ship type, speed, navigation status, and search query.
 
-### 8. `POST /api/query`
+### 10. `POST /api/query`
 Main natural language geospatial query execution pipeline fusing intent, RBAC, satellite processing, environmental weather evidence, and knowledge graphs.
 
 ---

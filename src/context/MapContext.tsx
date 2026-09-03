@@ -76,6 +76,7 @@ const defaultLayers: ActiveLayerState = {
   liveAisVessels: true,
   aisSatelliteCorrelation: true,
   maritimeInfrastructure: true,
+  submarineCables: true,
 };
 
 const defaultDisasterFilters: DisasterFilterState = {
