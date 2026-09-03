@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import L from 'leaflet';
 import { Radio, Search, X, Anchor, Globe, GripHorizontal } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
 import { cableApi } from '../../services/cableApi';
@@ -11,12 +11,69 @@ export const MaritimeControlBar: React.FC = () => {
   const setViewportBBox = mapContext?.setViewportBBox || (() => {});
 
   const [isOpen, setIsOpen] = useState(true);
+  const [position, setPosition] = useState({ x: 56, y: 16 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({
+    startX: 0,
+    startY: 0,
+    initialX: 56,
+    initialY: 16,
+  });
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<{
     cables: Array<{ id: string; name: string; color?: string; owners?: string; length?: string; coordinates?: any }>;
     landing_points: Array<{ id: string; name: string; country?: string; coordinates?: [number, number] }>;
   }>({ cables: [], landing_points: [] });
   const [isSearching, setIsSearching] = useState(false);
+
+  // Disable Leaflet map propagation on container mount
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+      L.DomEvent.disableScrollPropagation(containerRef.current);
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: position.x,
+      initialY: position.y,
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartRef.current.startX;
+      const dy = e.clientY - dragStartRef.current.startY;
+      setPosition({
+        x: Math.max(10, dragStartRef.current.initialX + dx),
+        y: Math.max(10, dragStartRef.current.initialY + dy),
+      });
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +106,10 @@ export const MaritimeControlBar: React.FC = () => {
 
   if (!isOpen) {
     return (
-      <div className="absolute top-4 left-14 z-[500]">
+      <div
+        className="absolute z-[500]"
+        style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      >
         <button
           onClick={() => setIsOpen(true)}
           className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-space-900/95 border border-cyan-500/50 text-cyan-300 shadow-2xl backdrop-blur-md text-xs font-mono font-bold hover:bg-space-850 hover:border-cyan-400 transition-all cursor-pointer"
@@ -63,16 +123,21 @@ export const MaritimeControlBar: React.FC = () => {
   }
 
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      dragElastic={0}
-      className="absolute top-4 left-14 z-[500] max-w-sm w-80 sm:w-96 select-none pointer-events-auto cursor-grab active:cursor-grabbing"
-      onPointerDown={(e) => e.stopPropagation()}
+    <div
+      ref={containerRef}
+      className="absolute z-[500] max-w-sm w-80 sm:w-96 select-none pointer-events-auto"
+      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono">
         {/* Movable Window Header (Drag Handle) */}
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+        <div
+          onMouseDown={handleMouseDown}
+          className={`flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 cursor-grab ${
+            isDragging ? 'cursor-grabbing' : ''
+          }`}
+          title="Click and drag header to move window over map"
+        >
           <div className="flex items-center gap-2">
             <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
@@ -193,6 +258,6 @@ export const MaritimeControlBar: React.FC = () => {
           Data: <strong className="text-slate-400">Gigawatt Map / TeleGeography</strong> &mdash; CC BY-NC-SA 3.0
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
