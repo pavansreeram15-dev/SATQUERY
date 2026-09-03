@@ -19,18 +19,14 @@ import { FloodLayer } from './FloodLayer';
 import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
-import { AISVesselsLayer } from './AISVesselsLayer';
-import { AISCorrelationLayer } from './AISCorrelationLayer';
+import { SubmarineCablesLayer } from './SubmarineCablesLayer';
 import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
 import { divIcon } from 'leaflet';
 import { BBox } from '../../types/map';
 import { SAMPLE_REGIONS } from '../../config/sampleRegions';
-import { AISVessel, AISFilterState, AISStatusResponse, AISCorrelationMatch } from '../../types/ais';
-import { aisApi } from '../../services/aisApi';
 import { cableApi } from '../../services/cableApi';
-import { SubmarineCablesLayer } from './SubmarineCablesLayer';
 import { SubmarineCableFeature, LandingPointFeature } from '../../types/cable';
 
 // Subcomponent to handle interactive AOI drawing on map
@@ -98,59 +94,6 @@ const MapViewController: React.FC = () => {
   }, [activeRegion, drawnBBox, drawnPolygon, selectedDisaster, searchLocation, map]);
 
   return null;
-};
-
-// Subcomponent inside MapContainer to continuously synchronize viewport & fetch live AIS vessels
-const AISMapIntegration: React.FC<{
-  filters: AISFilterState;
-  onVesselsUpdated: (vessels: AISVessel[], status: AISStatusResponse | null) => void;
-  selectedVessel: AISVessel | null;
-}> = ({ filters, onVesselsUpdated, selectedVessel }) => {
-  const map = useMap();
-  const { layers, queryResult } = useMapContext();
-  const [vessels, setVessels] = useState<AISVessel[]>([]);
-  const [correlations, setCorrelations] = useState<AISCorrelationMatch[]>([]);
-
-  const fetchVesselsForViewport = useCallback(async () => {
-    try {
-      const bounds = map.getBounds();
-      const currentBBox: BBox = [
-        bounds.getWest(),
-        bounds.getSouth(),
-        bounds.getEast(),
-        bounds.getNorth(),
-      ];
-      const liveVessels = await aisApi.getVessels(currentBBox, filters);
-      setVessels(liveVessels);
-      const st = await aisApi.getStatus();
-      onVesselsUpdated(liveVessels, st);
-
-      if (layers.aisSatelliteCorrelation && queryResult?.geojson_data?.features) {
-        const corr = await aisApi.correlateSatellite(queryResult.geojson_data.features, currentBBox);
-        setCorrelations(corr);
-      }
-    } catch (err) {
-      console.warn('[AISMapIntegration] Fetch error:', err);
-    }
-  }, [map, filters, layers.aisSatelliteCorrelation, queryResult, onVesselsUpdated]);
-
-  useEffect(() => {
-    fetchVesselsForViewport();
-    const interval = setInterval(fetchVesselsForViewport, 10000);
-    return () => clearInterval(interval);
-  }, [fetchVesselsForViewport]);
-
-  useMapEvents({
-    moveend: () => fetchVesselsForViewport(),
-    zoomend: () => fetchVesselsForViewport(),
-  });
-
-  return (
-    <>
-      <AISVesselsLayer map={map} vessels={vessels} enabled={!!layers.liveAisVessels} />
-      <AISCorrelationLayer map={map} correlations={correlations} enabled={!!layers.aisSatelliteCorrelation} />
-    </>
-  );
 };
 
 // Subcomponent inside MapContainer to continuously synchronize viewport & fetch submarine cables
@@ -223,43 +166,12 @@ export const SatelliteMap: React.FC = () => {
   const safeLayers = layers || { basemap: 'satellite', liveDisasters: true };
   const basemap = BASEMAP_TILES[safeLayers.basemap] || BASEMAP_TILES.satellite;
 
-  // Maritime State
-  const [aisVessels, setAisVessels] = useState<AISVessel[]>([]);
-  const [aisStatus, setAisStatus] = useState<AISStatusResponse | null>(null);
-  const [searchResults, setSearchResults] = useState<AISVessel[]>([]);
-  const [selectedVessel, setSelectedVessel] = useState<AISVessel | null>(null);
-  const [aisFilters, setAisFilters] = useState<AISFilterState>({
-    selectedTypes: [],
-    speedRange: 'ALL',
-    navStatus: 'ALL',
-    searchQuery: '',
-  });
-
   // Selected rectangle coordinates
   const displayBBox = drawnBBox || safeActiveRegion.bbox || [80.27, 13.07, 80.34, 13.14];
   const rectangleBounds: [[number, number], [number, number]] = [
     [displayBBox[1], displayBBox[0]],
     [displayBBox[3], displayBBox[2]],
   ];
-
-  const handleVesselSearch = async (q: string) => {
-    setAisFilters((prev) => ({ ...prev, searchQuery: q }));
-    if (q.trim()) {
-      try {
-        const res = await aisApi.searchVessels(q);
-        setSearchResults(res.vessels);
-      } catch (err) {
-        setSearchResults([]);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const handleVesselsUpdated = useCallback((vessels: AISVessel[], status: AISStatusResponse | null) => {
-    setAisVessels(vessels);
-    setAisStatus(status);
-  }, []);
 
   return (
     <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-space-950">
@@ -272,12 +184,6 @@ export const SatelliteMap: React.FC = () => {
         <MapViewController />
         <MapDrawingHandler />
         
-        <AISMapIntegration
-          filters={aisFilters}
-          onVesselsUpdated={handleVesselsUpdated}
-          selectedVessel={selectedVessel}
-        />
-
         <CablesMapIntegration />
 
         {/* Primary Basemap */}
@@ -320,58 +226,50 @@ export const SatelliteMap: React.FC = () => {
           />
         )}
 
-        {/* Search Location Marker */}
+        {/* Dynamic Analysis Layers */}
+        <DetectionLayer />
+        <FloodLayer />
+        <ChangeLayer />
+        <LiveDisastersLayer />
+
+        {/* Active Search Location Pin */}
         {searchLocation && (
           <Marker position={[searchLocation.lat, searchLocation.lon]} icon={searchIcon}>
-            <Popup className="satquery-popup font-mono text-xs">
-              <div className="p-2 space-y-1">
-                <div className="font-bold text-cyan-300 font-sans">{searchLocation.display_name}</div>
-                <div className="text-[10px] text-slate-300">
-                  Coordinates: {searchLocation.lat.toFixed(4)}°, {searchLocation.lon.toFixed(4)}°
+            <Popup className="custom-leaflet-popup">
+              <div className="p-2 font-mono text-xs text-space-100">
+                <div className="font-bold text-cyan-400 border-b border-space-700 pb-1 mb-1">
+                  📍 {searchLocation.name}
                 </div>
-                <div className="text-[9px] text-slate-400">
-                  Provider: {searchLocation.provider}
+                <div className="text-[10px] text-space-300">
+                  Lat: {searchLocation.lat.toFixed(4)}°, Lon: {searchLocation.lon.toFixed(4)}°
+                </div>
+                <div className="text-[9px] text-cyan-300 mt-1 uppercase font-semibold">
+                  Source: Nominatim OpenStreetMap
                 </div>
               </div>
             </Popup>
           </Marker>
         )}
-
-        {/* Remote Sensing AI Layers */}
-        <DetectionLayer />
-        <FloodLayer />
-        <ChangeLayer />
-
-        {/* Live Global Disaster & Earth Event Intelligence Layer */}
-        <LiveDisastersLayer />
       </MapContainer>
 
-      {/* Floating Maritime Control Bar (Top Right) */}
-      <div className="absolute top-4 right-4 z-[360] w-80 max-w-[calc(100vw-2rem)]">
-        <MaritimeControlBar
-          status={aisStatus}
-          vesselsCount={aisVessels.length}
-          filters={aisFilters}
-          onFilterChange={setAisFilters}
-          onSearchVessel={handleVesselSearch}
-          searchResults={searchResults}
-          onSelectVessel={setSelectedVessel}
-        />
-      </div>
-
-      {/* Live Disasters Filter & Multi-Hazard Controls Toolbar */}
-      <DisasterFilterBar />
-
-      {/* Selected Disaster Intelligence & Sentinel Hub Action Drawer */}
-      <DisasterInfoPanel />
-
-      {/* Floating Interactive Controls & Telemetry */}
+      {/* Floating Interactive Map Controls (Zoom, Reset, Draw BBox, Layers) */}
       <MapControls />
+
+      {/* Interactive AOI Bounding Box & Polygon Selector Bar */}
+      <BoundingBoxSelector />
+
+      {/* Synchronized Bi-Temporal Satellite Slider Overlay */}
       <BeforeAfterSlider />
 
-      {/* Floating AOI Survey Footprint Drawer */}
-      <div className="absolute bottom-4 left-4 z-[350] max-w-xs">
-        <BoundingBoxSelector />
+      {/* Disaster Intelligence Panel */}
+      <DisasterInfoPanel />
+
+      {/* Disaster Filter Control Bar */}
+      <DisasterFilterBar />
+
+      {/* Global Maritime & Submarine Cables Control Bar */}
+      <div className="absolute top-4 left-14 z-[400] max-w-sm">
+        <MaritimeControlBar />
       </div>
     </div>
   );
