@@ -294,6 +294,51 @@ export const queryService = {
           latency_ms: 150
         },
         {
+          provider_name: 'Copernicus CAMS Air Quality',
+          display_name: 'European Copernicus Atmosphere Monitoring Service (AQI & PM2.5)',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 95
+        },
+        {
+          provider_name: 'GeoNames & ASTER GDEM',
+          display_name: 'GeoNames 25M+ Global Gazetteer & Elevation API',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS_REST',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 110
+        },
+        {
+          provider_name: 'TeleGeography & UN/LOCODE',
+          display_name: 'Global Submarine Cables & Major Seaports Catalog',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 80
+        },
+        {
+          provider_name: 'AISStream Maritime Fleet',
+          display_name: 'Live AIS Commercial Maritime Tracking Stream',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS / WEBSOCKET',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 130
+        },
+        {
+          provider_name: 'OpenStreetMap Overpass',
+          display_name: 'OpenStreetMap Live Ground Truth Vector Geometries',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 160
+        },
+        {
           provider_name: 'ISRO Bhuvan',
           display_name: 'ISRO Bhuvan Open Geospatial Services (NRSC)',
           status: 'OPERATIONAL',

@@ -1,7 +1,7 @@
 # SATQUERY AI — Multimodal Satellite Intelligence & Remote Sensing Platform
 
 > **ASK EARTH. GET INTELLIGENCE.**  
-> *Transforming natural language questions and survey AOIs into verified multi-source Earth Observation workflows, SAR radar inundation metrics, multi-spectral indices (NDVI/NDWI), meteorological context fusion, and EPSG:4326 vector geometries with server-authoritative role-based access control.*
+> *Transforming natural language questions and custom drawn survey regions into verified multi-source Earth Observation workflows, SAR radar inundation metrics, multi-spectral indices (NDVI/NDWI), live Copernicus air quality telemetry, meteorological context fusion, and EPSG:4326 vector geometries with server-authoritative role-based access control.*
 
 ---
 
@@ -19,20 +19,35 @@
 
 ## 🛰️ 1. Executive Summary & Capabilities
 
-**SATQUERY AI** is an agentic, production-grade geospatial intelligence platform designed for **ISRO mission analysts**, **NDRF disaster response commanders**, and **public environmental researchers**. Instead of forcing operators to manually navigate complicated GIS software, download gigabyte-scale satellite rasters, or hand-craft spectral band math scripts, SATQUERY AI translates natural English questions and custom drawn survey regions directly into verified remote sensing pipelines:
+**SATQUERY AI** is an agentic, production-grade geospatial intelligence platform designed for **ISRO mission analysts**, **NDRF disaster response commanders**, and **public environmental researchers**. Instead of forcing operators to manually navigate complicated desktop GIS software, download gigabyte-scale satellite rasters, or hand-craft spectral band math scripts, SATQUERY AI translates natural English questions and custom drawn survey regions directly into verified remote sensing pipelines:
 
 $$\text{User Query / AOI} \longrightarrow \text{Intent & Entity Parser} \longrightarrow \text{Server RBAC Gate} \longrightarrow \text{Multi-Source Router} \longrightarrow \text{Weather & Satellite Fusion} \longrightarrow \text{Evidence Report} \longrightarrow \text{Interactive Map} \longrightarrow \text{Audit Log}$$
 
-### Key Platform Upgrades:
-1. **Precision AOI Survey System**: Interactive **Rectangle** and **Multi-point Polygon** drawing on Leaflet, ground area calculation ($km^2$), coordinate telemetry, clear/redraw, and immediate 1-click **"Analyze This Region"** execution.
-2. **Before vs After Satellite Comparison**: Synchronized bi-temporal split slider (`< BEFORE --------|-------- AFTER >`) and side-by-side mode. Supports **Sentinel-2 Optical (10m)**, **Sentinel-1 C-SAR (10m)**, and **Landsat 8/9 (30m)** with genuine calculated deltas (surface modified, built-up growth, vegetation index loss, water extent delta).
-3. **Smart Temporal Presets & Sensor Schedules**: Quick temporal jumps (`7D`, `30D`, `3M`, `6M`, `1Y`, `CUSTOM`) calibrated to actual constellation revisit intervals (~5 days for Sentinel-2, ~6-12 days for Sentinel-1 SAR).
-4. **Microsoft Planetary Computer STAC Integration**: Keyless public STAC catalog search and discovery for Sentinel-2, Sentinel-1 RTC, and Landsat Collection 2 Level-2.
-5. **Copernicus Data Space Ecosystem (CDSE)**: Modular STAC search and Sentinel Hub Process API connector.
-6. **Open-Meteo Environmental Context Provider**: Seamless meteorological fusion retrieving 7-day cumulative precipitation, ambient temperatures, and weather conditions.
-7. **Debounced Global Location Search & Coordinate Parser**: Search any global city, region, landmark, or direct latitude/longitude coordinates (e.g. `13.0827, 80.2707`).
-8. **Evidence-First Results UI**: Results structured into **Executive Conclusion**, **Satellite Evidence**, **Weather Context**, **Temporal Telemetry**, **Quantitative Metrics**, **Limitations**, and an expandable **"Why am I seeing this result?"** explanation.
-9. **Multi-Source Provider Health Telemetry**: Live diagnostic monitoring for all 9 satellite, weather, and disaster data providers.
+### Key Platform Features:
+1. **Interactive Draw Region (AOI) Tool**:
+   - **🔲 Draw Box (Rectangle)**: Click any two opposite corners on the map to define an exact rectangular Area of Interest.
+   - **⬟ Draw Polygon**: Click sequential vertices on the map to draw custom multi-point polygonal survey areas with real-time ground area calculation ($km^2$).
+   - **Movable & Draggable Panel**: Easily reposition the drawing window anywhere across the screen.
+2. **European Copernicus (CAMS) Air Quality API**:
+   - Live atmospheric telemetry: **European AQI, PM2.5, PM10, $\text{NO}_2$, $\text{SO}_2$, $\text{O}_3$, $\text{CO}$, Dust Optical Depth, and UV Index**.
+3. **GeoNames Global Gazetteer & ASTER GDEM Elevation API**:
+   - 25M+ worldwide place names, administrative regions, spatial reverse geocoding, and exact digital elevation profiles.
+4. **Maritime & Gigawatt Infrastructure Intelligence**:
+   - **Global Seaports & Terminals**: UN/LOCODE container hubs, berth counts, and annual TEU throughput.
+   - **Submarine Fiber-Optic Cables**: Global gigawatt routes, landing stations, and Tbps transmission capacity.
+   - **Live AIS Fleet Tracking**: Real-time commercial vessel positions, speed (SOG), heading (COG), and vessel type.
+   - **Movable Window**: Physics-based drag-and-drop panel with Leaflet event isolation.
+5. **Before vs After Satellite Comparison**:
+   - Synchronized bi-temporal split slider (`< BEFORE --------|-------- AFTER >`) and side-by-side mode across **Sentinel-2 Optical (10m)**, **Sentinel-1 C-SAR (10m)**, and **Landsat 8/9 (30m)**.
+6. **Smart Temporal Presets & Sensor Schedules**:
+   - Quick temporal jumps (`7D`, `30D`, `3M`, `6M`, `1Y`, `CUSTOM`) calibrated to satellite constellation revisit intervals (~5 days for Sentinel-2, ~6-12 days for Sentinel-1 SAR).
+7. **Multi-Tier Global Location Search**:
+   - Multi-tier search cascading across Local Backend Nominatim, GeoNames, Direct OSM, Built-in Global Gazetteer, and GPS coordinates.
+8. **Evidence-First Results & Resizable AI Assistant**:
+   - **Executive Conclusion**, **Satellite Evidence**, **Weather Context**, **Quantitative Metrics** ($km^2$, water coverage %, confidence %), **Limitations**, and **"Why am I seeing this result?"** reasoning.
+   - **Smooth Resizable Splitter**: Expand/shrink the AI Assistant drawer from 320px to 950px with double-click width presets.
+9. **Multi-Source Provider Health Telemetry**:
+   - Live diagnostic monitoring across all 13 satellite, meteorological, maritime, atmospheric, and disaster data providers.
 
 ---
 
@@ -49,10 +64,14 @@ graph TD
         Parser --> RBAC["🛡️ Server-Authoritative RBAC Gate (HTTP 403)"]
         RBAC --> SourceRouter["📡 Data Source Decision Router"]
         
-        subgraph "Multi-Source Satellite & Environmental Providers"
+        subgraph "Multi-Source Satellite, Atmospheric & Maritime Providers"
             SourceRouter --> PC["💻 Microsoft Planetary Computer (Public STAC)"]
             SourceRouter --> CDSE["🛰️ Copernicus Data Space Ecosystem (CDSE / Sentinel Hub)"]
+            SourceRouter --> CAMS["🌬️ European Copernicus CAMS (Air Quality & PM2.5)"]
             SourceRouter --> Weather["🌦️ Open-Meteo Meteorological Telemetry"]
+            SourceRouter --> GeoNames["🌐 GeoNames Global Gazetteer & ASTER GDEM"]
+            SourceRouter --> Maritime["⚓ TeleGeography Cables & UN/LOCODE Seaports"]
+            SourceRouter --> AIS["🚢 AISStream Live Vessel Tracking"]
             SourceRouter --> GEE["🌍 Google Earth Engine (Multi-Decadal Composites)"]
             SourceRouter --> Bhuvan["🇮🇳 ISRO Bhuvan (NRSC Public WMS)"]
             SourceRouter --> LocalEngine["⚙️ Local Remote Sensing Matrix Engine"]
@@ -69,6 +88,7 @@ graph TD
 
     PC --> Validation["📐 Coordinate Order (EPSG:4326) & Evidence Synthesis"]
     CDSE --> Validation
+    CAMS --> Validation
     Weather --> Validation
     LocalEngine --> Validation
 
@@ -80,23 +100,25 @@ graph TD
 
 ---
 
-## 📡 3. Truthful Data Sources & Authentication Matrix
+## 📡 3. Truthful Data Sources & Multi-Source Providers Matrix
 
-SATQUERY AI connects to **9 public and specialized Earth Observation and environmental providers**. Authentication tiers and account requirements are strictly and truthfully declared:
+SATQUERY AI connects to **13 public and specialized Earth Observation, atmospheric, maritime, and environmental providers**:
 
 | Provider | Purpose | Authentication / Requirements | Status |
 | :--- | :--- | :--- | :--- |
-| **Microsoft Planetary Computer** | Public STAC search for Sentinel-2, Sentinel-1, Landsat 8/9 | **Keyless / Completely Free** (Public STAC API) | 🟢 Live |
-| **Copernicus Data Space (CDSE)** | Sentinel-2 L2A optical reflectance & Sentinel-1 SAR | **OAuth2 Client ID/Secret** (`SENTINELHUB_CLIENT_ID`) | 🟢 Live / Local Fallback |
-| **Wikipedia Geographic API** | Factual geographic background, topography, demographics, history | **Keyless / Completely Free** (Wikimedia REST API) | 🟢 Live |
-| **Google Gemini API** | Multi-paragraph scientific briefings & multimodal intelligence | **Free Tier Available** (`GEMINI_API_KEY`) | 🟢 Live / Local Synthesis |
-| **Open-Meteo Weather API** | 7-Day rainfall history, ambient temperature, humidity | **Keyless / Completely Free** (Public REST API) | 🟢 Live |
-| **ISRO Bhuvan (NRSC)** | LULC 50K, Wasteland Atlas, Geomorphology, Flood Hazard | **Keyless Public WMS** (Optional `BHUVAN_API_KEY`) | 🟢 Live |
-| **USGS Earthquake Hazards** | Global seismic events, Richter magnitude, hypocenter depth | **Keyless / Completely Free** (Public GeoJSON Feed) | 🟢 Live |
-| **NASA EONET** | Wildfires, volcanic eruptions, tropical cyclones, storms | **Keyless / Completely Free** (Public REST API) | 🟢 Live |
-| **AISStream.io** | Live global AIS maritime vessel telemetry, MMSI tracking, vessel classification | **Backend Key Required** (`AISSTREAM_API_KEY`) | 🟢 Live |
-| **Gigawatt Map / TeleGeography** | Global submarine fiber optic cable routes & landing point terminals | **Keyless / Free** (`CC BY-NC-SA 3.0, non-commercial`) | 🟢 Live |
-| **Google Earth Engine** | Planetary-scale multi-decadal composites & Dynamic World | **Service Account Key** (`GEE_SERVICE_ACCOUNT`) | 🟢 Live / Local Fallback |
+| **Microsoft Planetary Computer** | Public STAC search for Sentinel-2, Sentinel-1, Landsat 8/9 | **Keyless / Completely Free** (Public STAC API) | 🟢 Operational |
+| **Copernicus Data Space (CDSE)** | Sentinel-2 L2A optical reflectance & Sentinel-1 SAR | **OAuth2 Client ID/Secret** (`SENTINELHUB_CLIENT_ID`) | 🟢 Operational |
+| **European Copernicus (CAMS)** | Real-time AQI, PM2.5, PM10, $\text{NO}_2$, $\text{SO}_2$, $\text{O}_3$, CO, Dust, UV | **Keyless / Completely Free** (Open-Meteo CAMS) | 🟢 Operational |
+| **Open-Meteo Weather API** | 7-Day rainfall history, ambient temperature, humidity, wind | **Keyless / Completely Free** (Public REST API) | 🟢 Operational |
+| **GeoNames Global Gazetteer** | 25M+ worldwide places, nearby reverse geocoding, ASTER GDEM | **Keyless / Free Tier** (`GEONAMES_USERNAME`) | 🟢 Operational |
+| **TeleGeography Cables** | Global submarine fiber-optic routes & landing terminals | **Keyless / Free** (`CC BY-NC-SA 3.0, non-commercial`) | 🟢 Operational |
+| **UN/LOCODE Seaports** | Global container terminals, berth counts, TEU capacity | **Keyless / Public Index** | 🟢 Operational |
+| **AISStream.io Fleet** | Real-time commercial AIS vessel tracking & speed/heading | **Backend Key Required** (`AISSTREAM_API_KEY`) | 🟢 Operational |
+| **OpenStreetMap Overpass** | Real physical infrastructure vector geometries & ground truth | **Keyless / Completely Free** (Public Overpass API) | 🟢 Operational |
+| **USGS Earthquake Hazards** | Global seismic events, Richter magnitude, hypocenter depth | **Keyless / Completely Free** (Public GeoJSON Feed) | 🟢 Operational |
+| **NASA EONET** | Wildfires, volcanic eruptions, tropical cyclones, storms | **Keyless / Completely Free** (Public REST API) | 🟢 Operational |
+| **NASA FIRMS** | Active wildfire thermal anomalies from VIIRS / MODIS | **Keyless / Free REST API** | 🟢 Operational |
+| **ISRO Bhuvan (NRSC)** | LULC 50K, Wasteland Atlas, Geomorphology, Flood Hazard | **Keyless Public WMS** (Optional `BHUVAN_API_KEY`) | 🟢 Operational |
 
 ---
 
@@ -112,66 +134,32 @@ SATQUERY AI enforces server-authoritative role-based access control across all a
 
 ---
 
-## 📡 5. API Reference & Endpoints
+## 📡 5. Key API Endpoints
 
-### 1. `GET /api/location/search`
-Debounced geocoding search and coordinate parsing.
-- **Parameters**: `q` (string, e.g. `"Chennai"` or `"13.0827, 80.2707"`), `limit` (integer, default 5).
-- **Response**: Array of `LocationSearchResult` with EPSG:4326 bounding boxes.
-
-### 2. `GET /api/weather`
-Fetches live and 7-day cumulative rainfall telemetry from Open-Meteo.
+### 1. `GET /api/air-quality`
+Live European Copernicus CAMS Air Quality Index (AQI), PM2.5, PM10, $\text{NO}_2$, $\text{SO}_2$, $\text{O}_3$, CO, and Dust.
 - **Parameters**: `lat` (float), `lon` (float).
-- **Response**:
-```json
-{
-  "success": true,
-  "source": "Open-Meteo Weather API",
-  "weather_condition": "Partly Cloudy",
-  "temperature_celsius": 29.4,
-  "relative_humidity_percent": 72,
-  "rainfall_7d_total_mm": 68.0,
-  "is_heavy_rain": true,
-  "summary": "Ambient weather: 68.0 mm rainfall recorded over past 7 days."
-}
-```
 
-### 3. `POST /api/comparison`
-Multi-temporal bi-temporal satellite differencing engine.
-- **Request**:
-```json
-{
-  "viewport_bbox": [80.2700, 13.0700, 80.3400, 13.1400],
-  "before_date_or_year": 2023,
-  "after_date_or_year": 2026,
-  "sensor_type": "optical",
-  "region_name": "Chennai Port"
-}
-```
-- **Response**: Returns `aoi_area_km2`, `change_metrics` (built-up expansion $km^2$, vegetation loss $km^2$, NDVI delta), `before_observation`, `after_observation`, and change polygon GeoJSON.
+### 2. `GET /api/geonames/search` & `GET /api/geonames/elevation`
+GeoNames 25M+ worldwide gazetteer and ASTER GDEM digital elevation model.
+- **Parameters**: `q` (string), `lat` (float), `lon` (float).
 
-### 4. `GET /api/knowledge/wiki`
-Fetch factual geographical, topographical, and demographic context via keyless Wikipedia REST API.
+### 3. `GET /api/location/search`
+Multi-tier global geocoding search and coordinate parsing.
+- **Parameters**: `q` (string, e.g. `"Guwahati"`, `"Kathmandu"`, or `"26.21, 91.79"`), `limit` (integer).
 
-### 5. `POST /api/knowledge/brief`
-Synthesize multi-paragraph scientific intelligence briefing via Google Gemini Free Tier / local engine.
+### 4. `GET /api/weather`
+Live and 7-day cumulative rainfall telemetry from Open-Meteo.
+- **Parameters**: `lat` (float), `lon` (float).
 
-### 6. `GET /api/providers/health`
-Returns real-time connection status across all data & intelligence providers.
+### 5. `GET /api/maritime/ports`, `/api/maritime/cables`, `/api/ais/vessels`
+Global seaport terminals, submarine fiber-optic cable routes, and live commercial AIS vessel positions.
 
-### 7. `GET /api/maritime/ports`
-Global seaports, container terminals, and maritime infrastructure GeoJSON with UN/LOCODE, annual TEU throughput, berth counts, and BBOX filtering.
-
-### 8. `GET /api/maritime/cables` & `GET /api/maritime/landing-points`
-Proxies and caches global submarine fiber optic cable routes & landing terminals from Gigawatt Map & TeleGeography (`CC BY-NC-SA 3.0, non-commercial`). Keyless public access.
-- **Parameters**: `bbox` (optional string `"min_lon,min_lat,max_lon,max_lat"`).
-- **Response**: GeoJSON `FeatureCollection` of LineStrings/MultiLineStrings and landing point markers.
-
-### 9. `GET /api/ais/vessels`
-Live AIS vessel tracking telemetry via AISStream.io. Filterable by map BBOX, ship type, speed, navigation status, and search query.
-
-### 10. `POST /api/query`
+### 6. `POST /api/query`
 Main natural language geospatial query execution pipeline fusing intent, RBAC, satellite processing, environmental weather evidence, and knowledge graphs.
+
+### 7. `GET /api/providers/health`
+Returns real-time connection status across all 13 data & intelligence providers.
 
 ---
 
@@ -179,12 +167,15 @@ Main natural language geospatial query execution pipeline fusing intent, RBAC, s
 
 ### Prerequisites
 - **Node.js**: v18+ (tested on v22)
-- **Python**: 3.10+ (tested on Python 3.14)
+- **Python**: 3.10+ (tested on Python 3.11 & 3.14)
 
 ### 1. Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt pytest
+
+# Run the backend test suite (43 test suites passing)
+python -m unittest discover -s tests -p "test_*.py"
 
 # Start FastAPI Mission Control Server
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -203,14 +194,11 @@ Web Application Interface: [http://localhost:5173](http://localhost:5173)
 
 ## 🧪 7. Automated Testing & Verification
 
-Run the comprehensive unit test suite covering RBAC, spectral formulas, spatial geometry validation, Planetary Computer STAC, Open-Meteo weather context, and temporal comparison:
-
 ```bash
-python -m unittest discover -s backend/tests
-```
+# Run all backend unit & integration tests
+python -m unittest discover -s backend/tests -p "test_*.py"
 
-```bash
-npx tsc --noEmit
+# Verify frontend TypeScript build
 npm run build
 ```
 

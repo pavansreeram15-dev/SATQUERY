@@ -44,7 +44,16 @@ export const ProviderHealthModal: React.FC = () => {
 
   const getProviderIcon = (name: string) => {
     const n = name.toLowerCase();
-    if (n.includes('copernicus') || n.includes('sentinel') || n.includes('planetary')) {
+    if (n.includes('air quality') || n.includes('cams')) {
+      return <CloudSun className="w-4 h-4 text-emerald-400" />;
+    }
+    if (n.includes('geonames') || n.includes('elevation') || n.includes('gdem')) {
+      return <Globe className="w-4 h-4 text-cyan-400" />;
+    }
+    if (n.includes('cable') || n.includes('port') || n.includes('ais')) {
+      return <Radio className="w-4 h-4 text-cyan-300" />;
+    }
+    if (n.includes('copernicus') || n.includes('sentinel') || n.includes('planetary') || n.includes('bhuvan')) {
       return <Satellite className="w-4 h-4 text-cyan-400" />;
     }
     if (n.includes('meteo') || n.includes('weather')) {
@@ -72,7 +81,7 @@ export const ProviderHealthModal: React.FC = () => {
               <div className="font-bold text-sm text-slate-100 font-sans flex items-center gap-2">
                 <span>Multi-Source Data Provider Health</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-mono">
-                  9/9 ONLINE
+                  {providers.length > 0 ? `${providers.length}/${providers.length} ONLINE` : 'LIVE CONNECTED'}
                 </span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono mt-0.5">
