@@ -22,7 +22,12 @@ REGION_KEYWORDS = {
     "Mumbai Coastal Region": ["mumbai", "jnpt", "bombay", "mumbai harbor", "navi mumbai"],
     "Sundarbans": ["sundarban", "sundarbans", "delta", "mangrove reserve"],
     "Kochi Coastal Region": ["kochi", "cochin", "kochi port"],
-    "Delhi Urban Region": ["delhi", "ncr", "yamuna"]
+    "Delhi Urban Region": ["delhi", "ncr", "yamuna"],
+    "Nepal Flood Region": ["nepal", "kathmandu", "pokhara", "koshi", "gandaki"],
+    "Pakistan Flood Region": ["pakistan", "indus", "sindh", "balochistan"],
+    "Bangladesh Flood Region": ["bangladesh", "dhaka", "sylhet", "jamuna"],
+    "California Wildfire Region": ["california", "los angeles", "san francisco"],
+    "Valencia Flood Region": ["valencia", "spain flood"]
 }
 
 def parse_query(
