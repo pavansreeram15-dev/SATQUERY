@@ -5,28 +5,122 @@ import { useMapContext } from '../../context/MapContext';
 import { disasterService } from '../../services/disasterService';
 import { EarthEvent, DisasterGeoJSONFeature } from '../../types/disaster';
 
-const HAZARD_COLORS: Record<string, string> = {
-  earthquake: '#EF4444', // Red
-  wildfire: '#F97316',   // Orange
-  cyclone: '#06B6D4',    // Cyan
-  storm: '#06B6D4',      // Cyan
-  flood: '#3B82F6',      // Blue
-  tsunami: '#3B82F6',    // Blue
-  volcano: '#DC2626',    // Crimson
-  drought: '#D97706',    // Amber
-  other: '#EAB308',      // Yellow
+// Distinct Glowing Colors and Symbols for each Hazard Type
+const HAZARD_CONFIG: Record<
+  string,
+  { symbol: string; color: string; bgGradient: string; glow: string; label: string }
+> = {
+  earthquake: {
+    symbol: '🔴',
+    color: '#EF4444',
+    bgGradient: 'from-red-600 via-rose-700 to-space-950',
+    glow: 'rgba(239, 68, 68, 0.65)',
+    label: 'EARTHQUAKE',
+  },
+  wildfire: {
+    symbol: '🔥',
+    color: '#F97316',
+    bgGradient: 'from-orange-500 via-red-600 to-amber-700',
+    glow: 'rgba(249, 115, 22, 0.65)',
+    label: 'WILDFIRE',
+  },
+  cyclone: {
+    symbol: '🌀',
+    color: '#06B6D4',
+    bgGradient: 'from-cyan-500 via-blue-600 to-indigo-800',
+    glow: 'rgba(6, 182, 212, 0.65)',
+    label: 'CYCLONE',
+  },
+  storm: {
+    symbol: '🌀',
+    color: '#06B6D4',
+    bgGradient: 'from-cyan-500 via-blue-600 to-indigo-800',
+    glow: 'rgba(6, 182, 212, 0.65)',
+    label: 'STORM',
+  },
+  flood: {
+    symbol: '🌊',
+    color: '#3B82F6',
+    bgGradient: 'from-blue-500 via-indigo-600 to-sky-800',
+    glow: 'rgba(59, 130, 246, 0.65)',
+    label: 'FLOOD',
+  },
+  tsunami: {
+    symbol: '🌊',
+    color: '#3B82F6',
+    bgGradient: 'from-blue-600 via-cyan-600 to-indigo-900',
+    glow: 'rgba(59, 130, 246, 0.65)',
+    label: 'TSUNAMI',
+  },
+  volcano: {
+    symbol: '🌋',
+    color: '#DC2626',
+    bgGradient: 'from-red-700 via-rose-800 to-stone-900',
+    glow: 'rgba(220, 38, 38, 0.65)',
+    label: 'VOLCANO',
+  },
+  drought: {
+    symbol: '☀️',
+    color: '#D97706',
+    bgGradient: 'from-amber-500 via-yellow-600 to-amber-800',
+    glow: 'rgba(217, 119, 6, 0.65)',
+    label: 'DROUGHT',
+  },
+  other: {
+    symbol: '⚠️',
+    color: '#EAB308',
+    bgGradient: 'from-yellow-500 to-amber-700',
+    glow: 'rgba(234, 179, 8, 0.65)',
+    label: 'HAZARD',
+  },
 };
 
-const HAZARD_ICONS: Record<string, string> = {
-  earthquake: '🔴',
-  wildfire: '🔥',
-  cyclone: '🌀',
-  storm: '🌀',
-  flood: '🌊',
-  tsunami: '🌊',
-  volcano: '🌋',
-  drought: '☀️',
-  other: '⚠️',
+// Global DivIcon Cache to avoid DOM re-creation
+const symbolIconCache = new Map<string, L.DivIcon>();
+
+const getDisasterSymbolIcon = (
+  type: string = 'other',
+  severity: string = 'moderate',
+  magnitude: number | string | undefined,
+  isSelected: boolean
+): L.DivIcon => {
+  const normType = type.toLowerCase();
+  const cfg = HAZARD_CONFIG[normType] || HAZARD_CONFIG.other;
+  const magStr = magnitude && normType === 'earthquake' ? String(Number(magnitude).toFixed(1)) : '0';
+  const cacheKey = `${normType}_${severity}_${magStr}_${isSelected ? '1' : '0'}`;
+
+  const cached = symbolIconCache.get(cacheKey);
+  if (cached) return cached;
+
+  const html = `
+    <div class="relative flex items-center justify-center cursor-pointer transition-transform duration-150 ${
+      isSelected ? 'scale-125 z-50' : 'hover:scale-115'
+    }">
+      <div class="w-7 h-7 rounded-full bg-gradient-to-br ${cfg.bgGradient} border-2 shadow-xl flex items-center justify-center text-xs text-white font-bold select-none" style="border-color: ${
+    isSelected ? '#38BDF8' : cfg.color
+  }; box-shadow: 0 0 12px ${cfg.glow};">
+        <span style="font-size: 13px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));">${cfg.symbol}</span>
+      </div>
+      ${
+        magnitude && normType === 'earthquake'
+          ? `<div class="absolute -bottom-2 px-1 rounded bg-space-950/95 border border-slate-700 text-[8px] font-mono text-amber-300 font-bold leading-tight shadow-md">M${Number(
+              magnitude
+            ).toFixed(1)}</div>`
+          : ''
+      }
+    </div>
+  `;
+
+  const newIcon = L.divIcon({
+    html,
+    className: 'satquery-disaster-symbol-icon',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  });
+
+  symbolIconCache.set(cacheKey, newIcon);
+  return newIcon;
 };
 
 export const LiveDisastersLayer: React.FC = () => {
@@ -42,14 +136,8 @@ export const LiveDisastersLayer: React.FC = () => {
   } = useMapContext();
 
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
-  const canvasRendererRef = useRef<L.Canvas | null>(null);
 
-  // Initialize canvas renderer safely
-  if (!canvasRendererRef.current && typeof L !== 'undefined' && L.canvas) {
-    canvasRendererRef.current = L.canvas({ padding: 0.5 });
-  }
-
-  // 1. Initial Data Fetch & Periodic Background Sync
+  // 1. Initial Data Fetch & Periodic Polling
   useEffect(() => {
     let isMounted = true;
 
@@ -132,7 +220,8 @@ export const LiveDisastersLayer: React.FC = () => {
         const matchesTitle = (p.title || '').toLowerCase().includes(q);
         const matchesCountry = (p.country || '').toLowerCase().includes(q);
         const matchesRegion = (p.region || '').toLowerCase().includes(q);
-        if (!matchesTitle && !matchesCountry && !matchesRegion) continue;
+        const matchesDesc = (p.description || '').toLowerCase().includes(q);
+        if (!matchesTitle && !matchesCountry && !matchesRegion && !matchesDesc) continue;
       }
 
       matched.push(feat);
@@ -141,15 +230,15 @@ export const LiveDisastersLayer: React.FC = () => {
     return matched;
   }, [features, selectedTypes, selectedSeverities, filters.searchQuery, filters.selectedSource, layers?.liveDisasters]);
 
-  // 3. Helper to format EarthEvent
+  // 3. Helper to format EarthEvent with complete description & telemetry
   const buildEventObject = useCallback((p: DisasterGeoJSONFeature['properties'], lat: number, lon: number): EarthEvent => {
     return {
       id: p.id,
       source: p.source || 'USGS',
       sources: p.sources || [p.source || 'USGS'],
       type: p.type || 'other',
-      title: p.title || 'Earth Event',
-      description: p.description,
+      title: p.title || 'Earth Observation Hazard',
+      description: p.description || 'Active natural hazard monitored via orbital satellites and ground telemetry.',
       latitude: lat,
       longitude: lon,
       magnitude: p.magnitude,
@@ -165,7 +254,7 @@ export const LiveDisastersLayer: React.FC = () => {
     };
   }, []);
 
-  // 4. Render HTML5 Canvas CircleMarkers with clean memory management
+  // 4. Render Symbol Markers onto Leaflet Map
   useEffect(() => {
     if (!map) return;
 
@@ -183,7 +272,6 @@ export const LiveDisastersLayer: React.FC = () => {
     }
 
     const layerGroup = L.layerGroup();
-    const renderer = canvasRendererRef.current || L.canvas({ padding: 0.5 });
 
     filteredFeatures.forEach((feat) => {
       const p = feat.properties;
@@ -192,37 +280,33 @@ export const LiveDisastersLayer: React.FC = () => {
       if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) return;
 
       const eventObj = buildEventObject(p, lat, lon);
-      const color = HAZARD_COLORS[p.type] || HAZARD_COLORS.other;
-      const iconSymbol = HAZARD_ICONS[p.type] || '⚠️';
+      const cfg = HAZARD_CONFIG[p.type] || HAZARD_CONFIG.other;
       const isSelected = selectedDisaster?.id === p.id;
+      const icon = getDisasterSymbolIcon(p.type, p.severity, p.magnitude, isSelected);
 
-      // Ultra-fast Hardware-Accelerated HTML5 Canvas CircleMarker
-      const marker = L.circleMarker([lat, lon], {
-        renderer,
-        radius: isSelected ? 12 : 8,
-        color: isSelected ? '#38bdf8' : '#ffffff',
-        weight: isSelected ? 2.5 : 1.5,
-        fillColor: color,
-        fillOpacity: isSelected ? 1.0 : 0.85,
+      // Create Leaflet Marker with Symbol DivIcon
+      const marker = L.marker([lat, lon], {
+        icon,
+        zIndexOffset: isSelected ? 1000 : 100,
       });
 
       // Quick hover tooltip
       marker.bindTooltip(
         `<div style="font-family: monospace; font-size: 11px; font-weight: bold; color: #f8fafc;">
-          ${iconSymbol} ${p.title || 'Disaster Event'}
+          ${cfg.symbol} ${p.title || 'Disaster Event'}
         </div>`,
-        { direction: 'top', offset: [0, -6], className: 'satquery-map-tooltip' }
+        { direction: 'top', offset: [0, -10], className: 'satquery-map-tooltip' }
       );
 
-      // Rich detailed popup
+      // Rich detailed popup with complete description
       const popupHtml = `
-        <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #020617; padding: 12px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.8); min-width: 250px; max-width: 300px;">
+        <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #020617; padding: 12px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.8); min-width: 260px; max-width: 320px;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: ${color};">
-              <span>${iconSymbol}</span>
-              <span style="text-transform: uppercase; font-size: 10px;">${p.type || 'EARTH'} EVENT</span>
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: ${cfg.color};">
+              <span style="font-size: 14px;">${cfg.symbol}</span>
+              <span style="text-transform: uppercase; font-size: 10px;">${cfg.label} INTELLIGENCE</span>
             </div>
-            <span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #0f172a; border: 1px solid #334155; color: ${color};">
+            <span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #0f172a; border: 1px solid #334155; color: ${cfg.color};">
               ${p.severity || 'MODERATE'}
             </span>
           </div>
@@ -234,27 +318,36 @@ export const LiveDisastersLayer: React.FC = () => {
           <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
             <span>📍 ${lat.toFixed(3)}°, ${lon.toFixed(3)}°</span>
             ${p.country ? `<span>• ${p.country}</span>` : ''}
+            ${p.region ? `<span>(${p.region})</span>` : ''}
           </div>
+
+          ${
+            p.description
+              ? `<div style="font-family: sans-serif; font-size: 11px; color: #cbd5e1; line-height: 1.4; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+                  ${p.description}
+                </div>`
+              : ''
+          }
 
           <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
             ${
               p.magnitude !== undefined && p.magnitude !== null
                 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                    <span style="color: #64748b;">${p.type === 'earthquake' ? 'Magnitude' : 'Intensity'}:</span>
-                    <strong style="color: #f59e0b;">${p.type === 'earthquake' ? `M${Number(p.magnitude).toFixed(1)}` : p.magnitude}</strong>
+                    <span style="color: #64748b;">${p.type === 'earthquake' ? 'Magnitude' : p.type === 'flood' ? 'Rainfall (24h)' : p.type === 'wildfire' ? 'Radiative Power' : 'Intensity'}:</span>
+                    <strong style="color: #f59e0b;">${p.type === 'earthquake' ? `M${Number(p.magnitude).toFixed(1)}` : `${p.magnitude} ${p.type === 'flood' ? 'mm' : p.type === 'wildfire' ? 'MW' : ''}`}</strong>
                   </div>`
                 : ''
             }
             ${
               p.depth_km !== undefined && p.depth_km !== null
                 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                    <span style="color: #64748b;">Depth:</span>
+                    <span style="color: #64748b;">Hypocenter Depth:</span>
                     <strong style="color: #cbd5e1;">${Number(p.depth_km).toFixed(1)} km</strong>
                   </div>`
                 : ''
             }
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #64748b;">Sources:</span>
+              <span style="color: #64748b;">Reporting Sources:</span>
               <strong style="color: #38bdf8;">${(p.sources || [p.source || 'USGS']).join(', ')}</strong>
             </div>
           </div>
@@ -274,7 +367,7 @@ export const LiveDisastersLayer: React.FC = () => {
         </div>
       `;
 
-      marker.bindPopup(popupHtml, { className: 'satquery-custom-popup', maxWidth: 320 });
+      marker.bindPopup(popupHtml, { className: 'satquery-custom-popup', maxWidth: 340 });
 
       // Handle popup interactions & satellite analysis trigger
       marker.on('popupopen', () => {

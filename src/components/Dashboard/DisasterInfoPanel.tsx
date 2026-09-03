@@ -141,7 +141,7 @@ export const DisasterInfoPanel: React.FC = () => {
       <div className="mt-2.5">
         <h3 className="text-sm font-bold font-sans text-slate-100 leading-snug">{d.title || 'Earth Event'}</h3>
         {d.description && (
-          <p className="mt-1 text-[11px] font-sans text-slate-300 line-clamp-2 leading-relaxed">
+          <p className="mt-1.5 text-[11px] font-sans text-slate-200 leading-relaxed max-h-32 overflow-y-auto pr-1">
             {d.description}
           </p>
         )}
@@ -158,11 +158,11 @@ export const DisasterInfoPanel: React.FC = () => {
 
         <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
           <div className="text-[10px] text-slate-400 uppercase font-sans">
-            {isEarthquake ? 'Magnitude' : isWildfire ? 'Radiative Power' : 'Alert Level'}
+            {isEarthquake ? 'Magnitude' : isWildfire ? 'Radiative Power' : d.type === 'flood' ? '24h Precipitation' : 'Hazard Level'}
           </div>
           <div className="text-amber-300 font-bold font-mono mt-0.5 text-xs">
             {hasNumericMag ? (
-              `${isEarthquake ? 'M' : ''}${typeof d.magnitude === 'number' ? d.magnitude.toFixed(1) : d.magnitude} ${isWildfire ? 'MW' : ''}`
+              `${isEarthquake ? 'M' : ''}${typeof d.magnitude === 'number' ? d.magnitude.toFixed(1) : d.magnitude} ${isWildfire ? 'MW' : d.type === 'flood' ? 'mm' : ''}`
             ) : (
               d.alert_level === 'red' || d.severity === 'critical' ? 'Red Alert Level' : 'Monitored Severity'
             )}
