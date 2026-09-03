@@ -6,7 +6,10 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone
-import websockets
+try:
+    import websockets
+except ImportError:
+    websockets = None
 
 from ..schemas.ais_schemas import (
     AISVessel,

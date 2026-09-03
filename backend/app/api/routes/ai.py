@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, Query, Body
 from ...services.knowledge_service import knowledge_service
 
