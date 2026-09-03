@@ -62,7 +62,7 @@ export const MaritimeControlBar: React.FC = () => {
 
   if (!isOpen) {
     return (
-      <div className="absolute top-16 left-14 z-[1000] pointer-events-auto">
+      <div className="absolute bottom-6 right-6 z-[1000] pointer-events-auto">
         <button
           onClick={() => setIsOpen(true)}
           className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-space-900/95 border border-cyan-500/50 text-cyan-300 shadow-2xl backdrop-blur-md text-xs font-mono font-bold hover:bg-space-850 hover:border-cyan-400 transition-all cursor-pointer"
@@ -90,7 +90,7 @@ export const MaritimeControlBar: React.FC = () => {
       }}
       transition={{ duration: 0 }}
       onPointerDown={(e) => e.stopPropagation()}
-      className={`absolute top-16 left-14 max-w-sm w-80 sm:w-96 select-none pointer-events-auto ${
+      className={`absolute bottom-6 right-6 max-w-sm w-80 sm:w-96 select-none pointer-events-auto ${
         isDragging ? 'z-[1050]' : 'z-[1000]'
       }`}
     >
