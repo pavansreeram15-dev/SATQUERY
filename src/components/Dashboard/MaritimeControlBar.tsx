@@ -78,12 +78,17 @@ export const MaritimeControlBar: React.FC = () => {
       drag
       dragMomentum={false}
       dragElastic={0}
+      dragTransition={{ power: 0, timeConstant: 0 }}
+      whileDrag={{
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 24px rgba(6, 182, 212, 0.25)',
+      }}
+      transition={{ duration: 0 }}
       onPointerDown={(e) => e.stopPropagation()}
       className="absolute top-16 left-14 z-[1000] max-w-sm w-80 sm:w-96 select-none pointer-events-auto cursor-grab active:cursor-grabbing"
     >
       <div
         ref={containerRef}
-        className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono"
+        className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono transition-shadow duration-150"
       >
         {/* Movable Window Header (Primary Drag Handle) */}
         <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
