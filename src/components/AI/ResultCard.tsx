@@ -504,8 +504,17 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
       </div>
 
       {/* Action Buttons & Exports */}
-      <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+      <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={() => exportService.exportPDF(result, `SATQUERY_${result.intent}_${result.query_id}`)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 hover:text-white transition-colors text-[10px] font-bold shadow-sm"
+            title="Download Full PDF Intelligence Briefing"
+          >
+            <FileText className="w-3 h-3 text-cyan-400" />
+            <span>PDF Report</span>
+          </button>
+
           <button
             onClick={() => exportService.exportGeoJSON(result, `satquery-${result.intent.toLowerCase()}`)}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-cyan-300 transition-colors text-[10px]"

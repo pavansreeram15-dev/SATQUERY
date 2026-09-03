@@ -32,6 +32,7 @@ export default defineConfig({
           'vendor-leaflet': ['leaflet', 'react-leaflet'],
           'vendor-motion': ['framer-motion'],
           'vendor-icons': ['lucide-react'],
+          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
         },
       },
     },
