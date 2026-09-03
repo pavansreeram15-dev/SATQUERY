@@ -184,6 +184,18 @@ export const DisasterInfoPanel: React.FC = () => {
             {d.confidence ? `${(d.confidence * 100).toFixed(0)}%` : '95%'}
           </div>
         </div>
+
+        {d.start_time && (
+          <div className="col-span-2 p-2 rounded-xl bg-space-900/80 border border-slate-800 flex items-center justify-between">
+            <div className="text-[10px] text-slate-400 uppercase font-sans flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Event Started</span>
+            </div>
+            <div className="text-cyan-300 font-bold font-mono text-xs">
+              {new Date(d.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(d.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Multi-Source Attribution Badges */}

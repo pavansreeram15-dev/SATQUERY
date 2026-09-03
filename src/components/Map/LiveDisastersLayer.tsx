@@ -5,7 +5,7 @@ import { useMapContext } from '../../context/MapContext';
 import { disasterService } from '../../services/disasterService';
 import { EarthEvent, DisasterGeoJSONFeature } from '../../types/disaster';
 
-// Real Vector SVG Symbols for each Hazard Type (Seismic Wave, Flame, Wave/Flood, Sun/Drought, Cyclone Vortex, Volcano)
+// Real Vector SVG Symbols for each Hazard Type
 const HAZARD_SVGS: Record<string, string> = {
   earthquake: `
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -189,6 +189,35 @@ const getDisasterSymbolIcon = (
   return newIcon;
 };
 
+// Formats timestamp into readable date & relative time
+const formatStartDate = (iso?: string): string => {
+  if (!iso) return 'Recently Active';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'Recently Active';
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const diffMs = Date.now() - d.getTime();
+    let relative = '';
+    if (diffMs > 0) {
+      const diffHours = Math.floor(diffMs / (1000 * 3600));
+      if (diffHours < 1) {
+        const diffMins = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+        relative = `(${diffMins}m ago)`;
+      } else if (diffHours < 24) {
+        relative = `(${diffHours}h ago)`;
+      } else {
+        const diffDays = Math.floor(diffHours / 24);
+        relative = `(${diffDays}d ago)`;
+      }
+    }
+    return `${dateStr} at ${timeStr} ${relative}`;
+  } catch {
+    return 'Recently Active';
+  }
+};
+
 export const LiveDisastersLayer: React.FC = () => {
   const map = useMap();
   const {
@@ -320,7 +349,7 @@ export const LiveDisastersLayer: React.FC = () => {
     };
   }, []);
 
-  // 4. Render Symbol Markers onto Leaflet Map
+  // 4. Render Symbol Markers onto Leaflet Map (Without White Tooltip Box)
   useEffect(() => {
     if (!map) return;
 
@@ -349,66 +378,76 @@ export const LiveDisastersLayer: React.FC = () => {
       const cfg = HAZARD_CONFIG[p.type] || HAZARD_CONFIG.other;
       const isSelected = selectedDisaster?.id === p.id;
       const icon = getDisasterSymbolIcon(p.type, p.severity, p.magnitude, isSelected);
+      const startDateFormatted = formatStartDate(p.start_time);
 
-      // Create Leaflet Marker with Symbol DivIcon
+      // Create Leaflet Marker with Symbol DivIcon (No bindTooltip to avoid white box)
       const marker = L.marker([lat, lon], {
         icon,
         zIndexOffset: isSelected ? 1000 : 100,
       });
 
-      // Quick hover tooltip
-      marker.bindTooltip(
-        `<div style="font-family: monospace; font-size: 11px; font-weight: bold; color: #f8fafc;">
-          ${cfg.textIcon} ${p.title || 'Disaster Event'}
-        </div>`,
-        { direction: 'top', offset: [0, -10], className: 'satquery-map-tooltip' }
-      );
-
-      // Rich detailed popup with complete description
+      // Rich detailed popup with Severity, Start Date & Complete Description
       const popupHtml = `
-        <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #020617; padding: 12px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.8); min-width: 260px; max-width: 320px;">
+        <div style="font-family: monospace; font-size: 11px; color: #f8fafc; background: #020617; padding: 12px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.8); min-width: 270px; max-width: 330px;">
+          <!-- Top Header with Type & Severity -->
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 6px; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: ${cfg.color};">
               <span style="font-size: 14px;">${cfg.textIcon}</span>
               <span style="text-transform: uppercase; font-size: 10px;">${cfg.label} INTELLIGENCE</span>
             </div>
-            <span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #0f172a; border: 1px solid #334155; color: ${cfg.color};">
-              ${p.severity || 'MODERATE'}
+            <span style="font-size: 9px; padding: 2px 7px; border-radius: 4px; font-weight: bold; text-transform: uppercase; background: #0f172a; border: 1px solid ${cfg.color}; color: ${cfg.color};">
+              ${(p.severity || 'MODERATE').toUpperCase()}
             </span>
           </div>
 
-          <div style="font-family: sans-serif; font-weight: bold; font-size: 12px; line-height: 1.3; color: #f1f5f9; margin-bottom: 6px;">
+          <!-- Title -->
+          <div style="font-family: sans-serif; font-weight: bold; font-size: 12px; line-height: 1.3; color: #f1f5f9; margin-bottom: 4px;">
             ${p.title || 'Earth Observation Event'}
           </div>
 
+          <!-- Location & Country -->
           <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
             <span>📍 ${lat.toFixed(3)}°, ${lon.toFixed(3)}°</span>
             ${p.country ? `<span>• ${p.country}</span>` : ''}
             ${p.region ? `<span>(${p.region})</span>` : ''}
           </div>
 
+          <!-- Full Situational Description -->
           ${
             p.description
-              ? `<div style="font-family: sans-serif; font-size: 11px; color: #cbd5e1; line-height: 1.4; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+              ? `<div style="font-family: sans-serif; font-size: 11px; color: #cbd5e1; line-height: 1.4; background: rgba(15, 23, 42, 0.7); border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
                   ${p.description}
                 </div>`
               : ''
           }
 
-          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+          <!-- Detailed Telemetry Grid -->
+          <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 8px; margin-bottom: 8px; font-size: 10px;">
+            <!-- Start Date / Time -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="color: #64748b;">Started:</span>
+              <strong style="color: #38bdf8; font-family: monospace;">${startDateFormatted}</strong>
+            </div>
+
+            <!-- Severity -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="color: #64748b;">Severity Level:</span>
+              <strong style="color: ${cfg.color}; text-transform: uppercase;">${p.severity || 'MODERATE'}</strong>
+            </div>
+
             ${
               p.magnitude !== undefined && p.magnitude !== null
-                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="color: #64748b;">${p.type === 'earthquake' ? 'Magnitude' : p.type === 'flood' ? '24h Rainfall' : p.type === 'wildfire' ? 'Radiative Power' : 'Intensity'}:</span>
-                    <strong style="color: #f59e0b;">${p.type === 'earthquake' ? `M${Number(p.magnitude).toFixed(1)}` : `${p.magnitude} ${p.type === 'flood' ? 'mm' : p.type === 'wildfire' ? 'MW' : ''}`}</strong>
+                    <strong style="color: #f59e0b; font-family: monospace;">${p.type === 'earthquake' ? `M${Number(p.magnitude).toFixed(1)}` : `${p.magnitude} ${p.type === 'flood' ? 'mm' : p.type === 'wildfire' ? 'MW' : ''}`}</strong>
                   </div>`
                 : ''
             }
             ${
               p.depth_km !== undefined && p.depth_km !== null
-                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="color: #64748b;">Hypocenter Depth:</span>
-                    <strong style="color: #cbd5e1;">${Number(p.depth_km).toFixed(1)} km</strong>
+                    <strong style="color: #cbd5e1; font-family: monospace;">${Number(p.depth_km).toFixed(1)} km</strong>
                   </div>`
                 : ''
             }
@@ -418,6 +457,7 @@ export const LiveDisastersLayer: React.FC = () => {
             </div>
           </div>
 
+          <!-- Actions -->
           <div style="display: flex; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
             <button id="btn-sat-analyze-${p.id}" style="flex: 1; padding: 6px 10px; background: #0891b2; color: #000000; font-weight: bold; font-size: 10px; border-radius: 6px; border: none; cursor: pointer;">
               🛰️ Analyze Satellite
@@ -433,7 +473,7 @@ export const LiveDisastersLayer: React.FC = () => {
         </div>
       `;
 
-      marker.bindPopup(popupHtml, { className: 'satquery-custom-popup', maxWidth: 340 });
+      marker.bindPopup(popupHtml, { className: 'satquery-custom-popup', maxWidth: 350 });
 
       // Handle popup interactions & satellite analysis trigger
       marker.on('popupopen', () => {
