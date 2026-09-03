@@ -145,6 +145,13 @@ export const MapControls: React.FC = () => {
                 onToggle={() => toggleLayer('change')}
               />
 
+              <LayerToggleItem
+                label="Maritime Seaports & Terminals"
+                active={Boolean(layers.maritimeInfrastructure)}
+                color="#06B6D4"
+                onToggle={() => toggleLayer('maritimeInfrastructure')}
+              />
+
               <div className="text-[10px] font-bold uppercase text-slate-500 pt-2 border-t border-slate-800/80">
                 ISRO Bhuvan Thematic WMS
               </div>

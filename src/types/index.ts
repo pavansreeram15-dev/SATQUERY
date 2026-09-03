@@ -6,3 +6,4 @@ export * from './satellite';
 export * from './geo';
 export * from './ai';
 export * from './analysis';
+export * from './maritime';

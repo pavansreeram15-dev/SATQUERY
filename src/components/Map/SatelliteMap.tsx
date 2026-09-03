@@ -19,6 +19,8 @@ import { FloodLayer } from './FloodLayer';
 import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
+import { MaritimeInfrastructureLayer } from './MaritimeInfrastructureLayer';
+import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
 import { divIcon } from 'leaflet';
@@ -179,6 +181,7 @@ export const SatelliteMap: React.FC = () => {
         <FloodLayer />
         <ChangeLayer />
         <LiveDisastersLayer />
+        <MaritimeInfrastructureLayer />
 
         {/* Active Search Location Pin */}
         {searchLocation && (
@@ -198,6 +201,9 @@ export const SatelliteMap: React.FC = () => {
             </Popup>
           </Marker>
         )}
+
+        {/* Movable Maritime Infrastructure Control Panel */}
+        <MaritimeControlBar />
       </MapContainer>
 
       {/* Floating Interactive Map Controls (Zoom, Reset, Draw BBox, Layers) */}
