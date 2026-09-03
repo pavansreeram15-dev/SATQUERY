@@ -149,15 +149,28 @@ class GeocodingService:
         except Exception:
             pass
 
-        # Local fallback database for common test regions
+        # Local fallback database for global cities & test regions
         fallback_places = {
-            "chennai": {"name": "Chennai, Tamil Nadu, India", "lat": 13.0827, "lon": 80.2707, "bbox": [80.20, 13.00, 80.35, 13.15]},
-            "mumbai": {"name": "Mumbai, Maharashtra, India", "lat": 18.9600, "lon": 72.8400, "bbox": [72.75, 18.85, 72.95, 19.05]},
-            "bengaluru": {"name": "Bengaluru, Karnataka, India", "lat": 12.9716, "lon": 77.5946, "bbox": [77.50, 12.90, 77.70, 13.05]},
-            "assam": {"name": "Assam, Northeast India", "lat": 26.2006, "lon": 92.9376, "bbox": [91.50, 26.00, 92.50, 26.80]},
-            "sundarbans": {"name": "Sundarbans Delta, West Bengal", "lat": 21.9497, "lon": 89.1833, "bbox": [88.90, 21.70, 89.40, 22.20]},
-            "delhi": {"name": "New Delhi, National Capital Region, India", "lat": 28.6139, "lon": 77.2090, "bbox": [77.10, 28.50, 77.30, 28.70]},
-            "kochi": {"name": "Kochi, Kerala, India", "lat": 9.9312, "lon": 76.2673, "bbox": [76.20, 9.85, 76.35, 10.00]}
+            "guwahati": {"name": "Guwahati, Kamrup Metropolitan, Assam, India", "lat": 26.1445, "lon": 91.7362, "bbox": [91.60, 26.05, 91.88, 26.25]},
+            "assam": {"name": "Assam Brahmaputra Valley, Northeast India", "lat": 26.2006, "lon": 92.9376, "bbox": [91.50, 26.00, 93.50, 27.20]},
+            "kathmandu": {"name": "Kathmandu, Bagmati Province, Nepal", "lat": 27.7172, "lon": 85.3240, "bbox": [85.25, 27.65, 85.40, 27.78]},
+            "nepal": {"name": "Nepal, Himalayan Mountain Region", "lat": 28.3949, "lon": 84.1240, "bbox": [80.05, 26.34, 88.20, 30.45]},
+            "chennai": {"name": "Chennai, Tamil Nadu, India", "lat": 13.0827, "lon": 80.2707, "bbox": [80.18, 12.98, 80.35, 13.18]},
+            "mumbai": {"name": "Mumbai & JNPT Port, Maharashtra, India", "lat": 18.9600, "lon": 72.8400, "bbox": [72.75, 18.85, 72.98, 19.10]},
+            "bengaluru": {"name": "Bengaluru, Karnataka, India", "lat": 12.9716, "lon": 77.5946, "bbox": [77.48, 12.88, 77.72, 13.08]},
+            "bangalore": {"name": "Bengaluru, Karnataka, India", "lat": 12.9716, "lon": 77.5946, "bbox": [77.48, 12.88, 77.72, 13.08]},
+            "hyderabad": {"name": "Hyderabad, Telangana, India", "lat": 17.3850, "lon": 78.4867, "bbox": [78.38, 17.28, 78.58, 17.48]},
+            "patna": {"name": "Patna, Bihar, India", "lat": 25.5941, "lon": 85.1376, "bbox": [85.05, 25.50, 85.25, 25.68]},
+            "sundarbans": {"name": "Sundarbans Delta, West Bengal, India", "lat": 21.9497, "lon": 89.1833, "bbox": [88.85, 21.65, 89.45, 22.25]},
+            "delhi": {"name": "New Delhi, National Capital Region, India", "lat": 28.6139, "lon": 77.2090, "bbox": [77.05, 28.45, 77.35, 28.75]},
+            "kolkata": {"name": "Kolkata, West Bengal, India", "lat": 22.5726, "lon": 88.3639, "bbox": [88.28, 22.48, 88.45, 22.65]},
+            "kochi": {"name": "Kochi & Port Corridor, Kerala, India", "lat": 9.9312, "lon": 76.2673, "bbox": [76.18, 9.85, 76.38, 10.02]},
+            "tokyo": {"name": "Tokyo Metropolis & Bay, Japan", "lat": 35.6762, "lon": 139.6503, "bbox": [139.50, 35.55, 139.85, 35.80]},
+            "london": {"name": "London, Greater London, United Kingdom", "lat": 51.5074, "lon": -0.1278, "bbox": [-0.25, 51.40, 0.05, 51.60]},
+            "new york": {"name": "New York City, New York, USA", "lat": 40.7128, "lon": -74.0060, "bbox": [-74.15, 40.60, -73.85, 40.85]},
+            "san francisco": {"name": "San Francisco Bay Area, California, USA", "lat": 37.7749, "lon": -122.4194, "bbox": [-122.52, 37.70, -122.35, 37.83]},
+            "dubai": {"name": "Dubai & Jebel Ali, United Arab Emirates", "lat": 25.2048, "lon": 55.2708, "bbox": [55.10, 25.05, 55.45, 25.32]},
+            "singapore": {"name": "Singapore Strait & Port, Singapore", "lat": 1.3521, "lon": 103.8198, "bbox": [103.65, 1.20, 104.00, 1.45]}
         }
 
         matched = []
@@ -170,7 +183,7 @@ class GeocodingService:
                     "lon": v["lon"],
                     "type": "city",
                     "bbox": v["bbox"],
-                    "importance": 0.8,
+                    "importance": 0.85,
                     "provider": "SATQUERY Built-in Geospatial Index"
                 })
         return matched
