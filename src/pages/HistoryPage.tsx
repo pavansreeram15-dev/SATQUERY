@@ -17,6 +17,7 @@ import {
   Layers,
   FileJson,
   FileSpreadsheet,
+  FileText,
 } from 'lucide-react';
 
 export const HistoryPage: React.FC = () => {
@@ -179,7 +180,15 @@ export const HistoryPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => exportService.exportPDF(item, `SATQUERY_${item.intent}_${item.query_id}`)}
+                      className="px-2.5 py-1 rounded bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 hover:text-white transition-colors flex items-center gap-1 text-[11px] font-bold shadow-sm"
+                      title="Download PDF Intelligence Briefing"
+                    >
+                      <FileText className="w-3 h-3 text-cyan-400" />
+                      <span>PDF Report</span>
+                    </button>
                     <button
                       onClick={() => exportService.downloadGeoJSON(item)}
                       className="px-2 py-1 rounded bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-cyan-300 transition-colors flex items-center gap-1 text-[11px]"
