@@ -131,10 +131,10 @@ export const MaritimeControlBar: React.FC = () => {
       )}
 
       {/* 3. Submarine Cables Feature Button */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="w-full flex items-center justify-center">
         <button
           onClick={() => toggleLayer('submarineCables')}
-          className={`w-full flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-bold text-xs transition-all border shadow-lg ${
+          className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border shadow-lg ${
             layers.submarineCables
               ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-300 shadow-cyan-950/50'
               : 'bg-space-850 border-slate-700 text-slate-400 hover:text-white'
