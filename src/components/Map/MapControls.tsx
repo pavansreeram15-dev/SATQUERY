@@ -3,17 +3,11 @@ import { useMapContext } from '../../context/MapContext';
 import { usePersona } from '../../context/PersonaContext';
 import { BASEMAP_TILES, BHUVAN_LAYERS_CONFIG } from '../../config/mapConfig';
 import { BasemapType, ActiveLayerState } from '../../types/map';
-import { cableApi } from '../../services/cableApi';
 import {
   Layers,
   Crosshair,
   RotateCcw,
   Sliders,
-  Radio,
-  Search,
-  X,
-  Globe,
-  Anchor,
 } from 'lucide-react';
 
 export const MapControls: React.FC = () => {
@@ -26,46 +20,13 @@ export const MapControls: React.FC = () => {
     setIsDrawingBBox,
     comparison,
     setComparison,
-    setViewportBBox,
   } = useMapContext();
 
   const { persona } = usePersona();
   const [panelOpen, setPanelOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'layers' | 'basemap'>('layers');
-  const [showCableSearch, setShowCableSearch] = useState<boolean>(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchResults, setSearchResults] = useState<{
-    cables: Array<{ id: string; name: string; color?: string; owners?: string; length?: string }>;
-    landing_points: Array<{ id: string; name: string; country?: string; coordinates?: [number, number] }>;
-  }>({ cables: [], landing_points: [] });
 
   const basemaps: BasemapType[] = ['dark', 'satellite', 'street', 'topo'];
-
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchInput.trim()) return;
-
-    try {
-      const res = await cableApi.search(searchInput.trim());
-      setSearchResults({
-        cables: res.cables || [],
-        landing_points: res.landing_points || []
-      });
-    } catch (err) {
-      console.warn('[MapControls] Cable search warning:', err);
-      setSearchResults({ cables: [], landing_points: [] });
-    }
-  };
-
-  const handleSelectLandingPoint = (coords: [number, number]) => {
-    const span = 0.08;
-    setViewportBBox([
-      coords[0] - span,
-      coords[1] - span,
-      coords[0] + span,
-      coords[1] + span,
-    ]);
-  };
 
   return (
     <div className="absolute top-4 right-4 z-[400] flex flex-col items-end gap-2 font-mono text-xs select-none">
@@ -183,108 +144,6 @@ export const MapControls: React.FC = () => {
                 color="#F59E0B"
                 onToggle={() => toggleLayer('change')}
               />
-
-              {/* Global Maritime Infrastructure (Submarine Cables) */}
-              <div className="p-2 rounded-xl border border-slate-800 bg-space-900/90 space-y-2 shadow-lg">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />
-                    <div className="truncate">
-                      <div className="font-bold text-slate-100 text-[11px] truncate">Global Maritime Infrastructure</div>
-                      <div className="text-[9px] text-slate-400">Submarine Cables & Landing Terminals</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => setShowCableSearch(!showCableSearch)}
-                      className={`p-1 rounded text-[10px] transition-colors ${
-                        showCableSearch ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-cyan-300 hover:bg-space-850'
-                      }`}
-                      title="Search Cables & Terminals"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => toggleLayer('submarineCables')}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
-                        layers.submarineCables ? 'bg-cyan-500 text-black shadow-sm' : 'bg-space-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {layers.submarineCables ? 'ON' : 'OFF'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submarine Cable Search & Terminal Lookup Box */}
-                {showCableSearch && (
-                  <div className="pt-2 border-t border-slate-800 space-y-1.5 animate-in fade-in">
-                    <form onSubmit={handleSearchSubmit} className="relative w-full">
-                      <input
-                        type="text"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        placeholder="Search cable, landing terminal, country..."
-                        className="w-full pl-7 pr-6 py-1.5 rounded-lg bg-space-950 border border-slate-700 text-slate-200 placeholder-slate-500 text-[10px] focus:outline-none focus:border-cyan-500 transition-colors shadow-inner"
-                      />
-                      <Search className="w-3 h-3 text-slate-400 absolute left-2 top-2.5" />
-                      {searchInput && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchInput('');
-                            setSearchResults({ cables: [], landing_points: [] });
-                          }}
-                          className="absolute right-1.5 top-2 text-slate-400 hover:text-white"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </form>
-
-                    {((searchResults?.cables?.length ?? 0) > 0 || (searchResults?.landing_points?.length ?? 0) > 0) && (
-                      <div className="p-1.5 rounded-lg bg-space-950 border border-slate-800 space-y-1.5 max-h-40 overflow-y-auto">
-                        {searchResults.cables.length > 0 && (
-                          <div className="space-y-0.5">
-                            <div className="text-[9px] text-cyan-400 font-bold uppercase flex items-center gap-1">
-                              <Globe className="w-2.5 h-2.5" />
-                              <span>Cables ({searchResults.cables.length}):</span>
-                            </div>
-                            {searchResults.cables.map((c) => (
-                              <div key={c.id} className="p-1 rounded bg-space-900 text-[10px] flex justify-between items-center">
-                                <span className="font-semibold text-slate-200 truncate">{c.name}</span>
-                                <span className="text-[9px] text-slate-400 ml-1 flex-shrink-0">{c.length || 'Active'}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {searchResults.landing_points.length > 0 && (
-                          <div className="space-y-0.5 pt-1 border-t border-slate-800">
-                            <div className="text-[9px] text-sky-400 font-bold uppercase flex items-center gap-1">
-                              <Anchor className="w-2.5 h-2.5" />
-                              <span>Terminals ({searchResults.landing_points.length}):</span>
-                            </div>
-                            {searchResults.landing_points.map((lp) => (
-                              <button
-                                key={lp.id}
-                                onClick={() => lp.coordinates && handleSelectLandingPoint(lp.coordinates)}
-                                className="w-full text-left p-1 rounded hover:bg-space-850 flex justify-between items-center text-[10px] transition-colors"
-                              >
-                                <span className="font-semibold text-slate-200 truncate">{lp.name}</span>
-                                <span className="text-[9px] text-sky-300 ml-1 flex-shrink-0">{lp.country || 'Terminal'}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="text-[8.5px] text-slate-500 text-center pt-1 border-t border-slate-800/60">
-                      Data: <strong className="text-slate-400">Gigawatt Map / TeleGeography</strong> &mdash; CC BY-NC-SA 3.0
-                    </div>
-                  </div>
-                )}
-              </div>
 
               <div className="text-[10px] font-bold uppercase text-slate-500 pt-2 border-t border-slate-800/80">
                 ISRO Bhuvan Thematic WMS

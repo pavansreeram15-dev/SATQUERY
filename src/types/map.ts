@@ -47,5 +47,4 @@ export interface ActiveLayerState {
   splitComparison: boolean;
   liveAisVessels?: boolean;
   aisSatelliteCorrelation?: boolean;
-  submarineCables?: boolean;
 }
