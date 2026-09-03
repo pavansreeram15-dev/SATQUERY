@@ -268,9 +268,7 @@ export const SatelliteMap: React.FC = () => {
       <DisasterFilterBar />
 
       {/* Global Maritime & Submarine Cables Control Bar */}
-      <div className="absolute top-4 left-14 z-[400] max-w-sm">
-        <MaritimeControlBar />
-      </div>
+      <MaritimeControlBar />
     </div>
   );
 };
