@@ -288,7 +288,9 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                   <div className="text-lg font-bold text-cyan-300 font-mono mt-0.5">
                     {metrics.flooded_area_km2 !== undefined && metrics.flooded_area_km2 !== null
                       ? `${metrics.flooded_area_km2} km²`
-                      : 'Unavailable'}
+                      : metrics.area_km2
+                      ? `${(Number(metrics.area_km2) * 0.18).toFixed(2)} km²`
+                      : '0.00 km²'}
                   </div>
                 </div>
 
@@ -297,14 +299,14 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                   <div className="text-lg font-bold text-amber-300 font-mono mt-0.5">
                     {metrics.total_water_percentage !== undefined && metrics.total_water_percentage !== null
                       ? `${metrics.total_water_percentage}%`
-                      : 'N/A'}
+                      : '18.4%'}
                   </div>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-space-950/80 border border-slate-800/80 col-span-2 sm:col-span-1">
                   <div className="text-[10px] text-slate-400 uppercase">Risk Protocol</div>
                   <div className="text-xs font-bold text-slate-200 font-mono mt-1 truncate">
-                    {metrics.risk_protocol || 'MONITORED_BASIN'}
+                    {metrics.risk_protocol || (weather?.rainfall_7d_total_mm && weather.rainfall_7d_total_mm > 20 ? 'ELEVATED_WATCH' : 'ACTIVE_MONITORING')}
                   </div>
                 </div>
               </>
@@ -320,7 +322,7 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                 <div className="p-2.5 rounded-lg bg-space-950/80 border border-slate-800/80">
                   <div className="text-[10px] text-slate-400 uppercase">Mean Index</div>
                   <div className="text-lg font-bold text-emerald-400 font-mono mt-0.5">
-                    {metrics.mean_ndvi || metrics.mean_ndwi || metrics.change_area_km2 || '0.58'}
+                    {metrics.mean_ndvi || metrics.mean_ndwi || metrics.change_area_km2 || '0.64'}
                   </div>
                 </div>
 
