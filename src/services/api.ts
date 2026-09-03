@@ -1,7 +1,19 @@
 /// <reference types="vite/client" />
 
 const DEFAULT_CLOUD_API = 'https://satquery-backend-9xen.onrender.com';
-const API_BASE = (import.meta as any).env?.VITE_API_URL ?? (import.meta.env.PROD ? DEFAULT_CLOUD_API : '');
+
+const getApiBase = (): string => {
+  try {
+    const metaEnv = (import.meta as any)?.env;
+    if (metaEnv?.VITE_API_URL) return metaEnv.VITE_API_URL;
+    if (metaEnv?.PROD) return DEFAULT_CLOUD_API;
+  } catch {
+    // fallback
+  }
+  return '';
+};
+
+const API_BASE = getApiBase();
 
 export class ApiError extends Error {
   status: number;

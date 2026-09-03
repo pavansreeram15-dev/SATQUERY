@@ -4,7 +4,10 @@ import { useMapContext } from '../../context/MapContext';
 import { cableApi } from '../../services/cableApi';
 
 export const MaritimeControlBar: React.FC = () => {
-  const { layers, toggleLayer, setViewportBBox } = useMapContext();
+  const mapContext = useMapContext();
+  const layers = mapContext?.layers || { submarineCables: true };
+  const toggleLayer = mapContext?.toggleLayer || (() => {});
+  const setViewportBBox = mapContext?.setViewportBBox || (() => {});
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<{
     cables: Array<{ id: string; name: string; color?: string; owners?: string; length?: string; coordinates?: any }>;

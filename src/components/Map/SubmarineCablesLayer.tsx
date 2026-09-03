@@ -41,9 +41,10 @@ export const SubmarineCablesLayer: React.FC<SubmarineCablesLayerProps> = ({
     const group = layerGroupRef.current;
     if (!map || !group) return;
 
-    group.clearLayers();
+    try {
+      group.clearLayers();
 
-    if (!enabled) return;
+      if (!enabled) return;
 
     const safeCables = Array.isArray(cables) ? cables : [];
     const safeLandingPoints = Array.isArray(landingPoints) ? landingPoints : [];
@@ -145,8 +146,10 @@ export const SubmarineCablesLayer: React.FC<SubmarineCablesLayerProps> = ({
 
         marker.bindPopup(popupContent);
         marker.addTo(group);
-      }
-    });
+      });
+    } catch (err) {
+      console.warn('[SubmarineCablesLayer] Render error caught safely:', err);
+    }
   }, [map, cables, landingPoints, enabled]);
 
   return null;
