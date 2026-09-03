@@ -2,31 +2,35 @@ import { BasemapType, BhuvanLayerConfig } from '../types/map';
 
 export const BASEMAP_TILES: Record<
   BasemapType,
-  { name: string; url: string; attribution: string; maxZoom: number; subdomains?: string }
+  { name: string; url: string; attribution: string; maxZoom: number; maxNativeZoom: number; subdomains?: string }
 > = {
   dark: {
     name: 'Mission Dark (ESRI / Carto)',
     url: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
     maxZoom: 19,
+    maxNativeZoom: 16,
   },
   satellite: {
     name: 'High-Res Satellite (ESRI)',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     maxZoom: 19,
+    maxNativeZoom: 18,
   },
   street: {
     name: 'OpenStreetMap Standard',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
+    maxNativeZoom: 19,
   },
   topo: {
     name: 'ESRI Topographic Terrain',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
     maxZoom: 19,
+    maxNativeZoom: 18,
   },
 };
 

@@ -73,6 +73,8 @@ const defaultLayers: ActiveLayerState = {
   bhuvanGeomorph: false,
   bboxDrawMode: false,
   splitComparison: false,
+  liveAisVessels: true,
+  aisSatelliteCorrelation: true,
 };
 
 const defaultDisasterFilters: DisasterFilterState = {

@@ -236,6 +236,7 @@ export const SatelliteMap: React.FC = () => {
           url={basemap.url}
           attribution={basemap.attribution}
           maxZoom={basemap.maxZoom}
+          maxNativeZoom={basemap.maxNativeZoom || 18}
         />
 
         {/* Bhuvan WMS Thematic Overlays */}
