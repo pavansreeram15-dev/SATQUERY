@@ -1,3 +1,3 @@
-from ..test_detection_pipeline import TestUniversalDetectionPipeline
+from backend.tests.test_detection_pipeline import TestUniversalDetectionPipeline
 
 __all__ = ["TestUniversalDetectionPipeline"]

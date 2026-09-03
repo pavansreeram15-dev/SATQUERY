@@ -1,3 +1,3 @@
-from ..test_disaster_providers import TestDisasterProviders
+from backend.tests.test_disaster_providers import TestDisasterProviders
 
 __all__ = ["TestDisasterProviders"]
