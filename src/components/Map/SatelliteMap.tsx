@@ -20,7 +20,6 @@ import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
 import { AISVesselsLayer } from './AISVesselsLayer';
-import { AISCorrelationLayer } from './AISCorrelationLayer';
 import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
@@ -109,8 +108,6 @@ const AISMapIntegration: React.FC<{
   const map = useMap();
   const { layers, queryResult } = useMapContext();
   const [vessels, setVessels] = useState<AISVessel[]>([]);
-  const [correlations, setCorrelations] = useState<AISCorrelationMatch[]>([]);
-
   const fetchVesselsForViewport = useCallback(async () => {
     try {
       const bounds = map.getBounds();
@@ -124,15 +121,10 @@ const AISMapIntegration: React.FC<{
       setVessels(liveVessels);
       const st = await aisApi.getStatus();
       onVesselsUpdated(liveVessels, st);
-
-      if (layers.aisSatelliteCorrelation && queryResult?.geojson_data?.features) {
-        const corr = await aisApi.correlateSatellite(queryResult.geojson_data.features, currentBBox);
-        setCorrelations(corr);
-      }
     } catch (err) {
       console.warn('[AISMapIntegration] Fetch error:', err);
     }
-  }, [map, filters, layers.aisSatelliteCorrelation, queryResult, onVesselsUpdated]);
+  }, [map, filters, onVesselsUpdated]);
 
   useEffect(() => {
     fetchVesselsForViewport();
@@ -146,10 +138,7 @@ const AISMapIntegration: React.FC<{
   });
 
   return (
-    <>
-      <AISVesselsLayer map={map} vessels={vessels} enabled={!!layers.liveAisVessels} />
-      <AISCorrelationLayer map={map} correlations={correlations} enabled={!!layers.aisSatelliteCorrelation} />
-    </>
+    <AISVesselsLayer map={map} vessels={vessels} enabled={!!layers.liveAisVessels} />
   );
 };
 
