@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import L from 'leaflet';
-import { motion } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 import { Radio, Search, X, Anchor, Globe, GripHorizontal } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
 import { cableApi } from '../../services/cableApi';
@@ -12,6 +12,8 @@ export const MaritimeControlBar: React.FC = () => {
   const setViewportBBox = mapContext?.setViewportBBox || (() => {});
 
   const [isOpen, setIsOpen] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragControls = useDragControls();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [searchInput, setSearchInput] = useState('');
@@ -21,7 +23,7 @@ export const MaritimeControlBar: React.FC = () => {
   }>({ cables: [], landing_points: [] });
   const [isSearching, setIsSearching] = useState(false);
 
-  // Disable Leaflet map propagation on container mount so dragging works 100% smoothly
+  // Disable Leaflet map propagation so map never pans while clicking/typing in the panel
   useEffect(() => {
     if (containerRef.current) {
       L.DomEvent.disableClickPropagation(containerRef.current);
@@ -76,22 +78,39 @@ export const MaritimeControlBar: React.FC = () => {
   return (
     <motion.div
       drag
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       dragElastic={0}
       dragTransition={{ power: 0, timeConstant: 0 }}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={() => setIsDragging(false)}
       whileDrag={{
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 24px rgba(6, 182, 212, 0.25)',
       }}
       transition={{ duration: 0 }}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute top-16 left-14 z-[1000] max-w-sm w-80 sm:w-96 select-none pointer-events-auto cursor-grab active:cursor-grabbing"
+      className={`absolute top-16 left-14 max-w-sm w-80 sm:w-96 select-none pointer-events-auto ${
+        isDragging ? 'z-[1050]' : 'z-[1000]'
+      }`}
     >
       <div
         ref={containerRef}
         className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono transition-shadow duration-150"
       >
         {/* Movable Window Header (Primary Drag Handle) */}
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+        <div
+          onPointerDown={(e) => {
+            // Only start drag if not clicking the close button
+            if ((e.target as HTMLElement).closest('button')) return;
+            e.stopPropagation();
+            dragControls.start(e);
+          }}
+          className={`flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 select-none touch-none ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+          title="Drag to reposition window"
+        >
           <div className="flex items-center gap-2 pointer-events-none">
             <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
@@ -124,7 +143,7 @@ export const MaritimeControlBar: React.FC = () => {
         </div>
 
         {/* 2. Submarine Cable & Landing Point Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="relative w-full">
+        <form onSubmit={handleSearchSubmit} className="relative w-full" onPointerDown={(e) => e.stopPropagation()}>
           <input
             type="text"
             value={searchInput}
@@ -149,7 +168,7 @@ export const MaritimeControlBar: React.FC = () => {
 
         {/* Search Results Dropdown */}
         {((searchResults?.cables?.length ?? 0) > 0 || (searchResults?.landing_points?.length ?? 0) > 0) && (
-          <div className="p-2 rounded-xl bg-space-950 border border-slate-800 space-y-1.5 max-h-48 overflow-y-auto animate-in fade-in">
+          <div className="p-2 rounded-xl bg-space-950 border border-slate-800 space-y-1.5 max-h-48 overflow-y-auto animate-in fade-in" onPointerDown={(e) => e.stopPropagation()}>
             {searchResults.cables && searchResults.cables.length > 0 && (
               <div className="space-y-1">
                 <div className="text-[10px] text-cyan-400 font-bold uppercase flex items-center gap-1">
@@ -190,7 +209,7 @@ export const MaritimeControlBar: React.FC = () => {
         )}
 
         {/* 3. Submarine Cables Feature Button */}
-        <div className="w-full flex items-center justify-center">
+        <div className="w-full flex items-center justify-center" onPointerDown={(e) => e.stopPropagation()}>
           <button
             onClick={() => toggleLayer('submarineCables')}
             className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border shadow-lg cursor-pointer ${
@@ -206,7 +225,7 @@ export const MaritimeControlBar: React.FC = () => {
         </div>
 
         {/* Attribution Footer */}
-        <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/60 pt-2">
+        <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/60 pt-2 pointer-events-none">
           Data: <strong className="text-slate-400">Gigawatt Map / TeleGeography</strong> &mdash; CC BY-NC-SA 3.0
         </div>
       </div>
