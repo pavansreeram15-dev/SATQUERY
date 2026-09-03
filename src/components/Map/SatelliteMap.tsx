@@ -59,23 +59,23 @@ const MapDrawingHandler: React.FC = () => {
   return null;
 };
 
-// Subcomponent to animate and synchronize map center/zoom with active region, search location, or disaster
+// Subcomponent to animate and synchronize map center/zoom with active region, search location, or survey AOI
 const MapViewController: React.FC = () => {
-  const { activeRegion, drawnBBox, drawnPolygon, selectedDisaster, searchLocation } = useMapContext();
+  const { activeRegion, drawnBBox, drawnPolygon, searchLocation } = useMapContext();
   const map = useMap();
+  const prevRegionIdRef = React.useRef<string | null>(null);
+  const prevSearchRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     try {
-      if (searchLocation) {
+      if (searchLocation && searchLocation.place_id !== prevSearchRef.current) {
+        prevSearchRef.current = searchLocation.place_id;
         map.flyTo([searchLocation.lat, searchLocation.lon], 12, { duration: 1.5 });
-      } else if (
-        selectedDisaster &&
-        typeof selectedDisaster.latitude === 'number' &&
-        typeof selectedDisaster.longitude === 'number' &&
-        !isNaN(selectedDisaster.latitude) &&
-        !isNaN(selectedDisaster.longitude)
-      ) {
-        map.flyTo([selectedDisaster.latitude, selectedDisaster.longitude], 11, { duration: 1.4 });
+      } else if (activeRegion && activeRegion.id !== prevRegionIdRef.current) {
+        prevRegionIdRef.current = activeRegion.id;
+        if (activeRegion.center && typeof activeRegion.zoom === 'number') {
+          map.flyTo(activeRegion.center, activeRegion.zoom, { duration: 1.5 });
+        }
       } else if (drawnPolygon && drawnPolygon.length >= 3) {
         map.fitBounds(drawnPolygon, { padding: [40, 40], duration: 1.2 });
       } else if (drawnBBox && drawnBBox.length === 4) {
@@ -83,13 +83,11 @@ const MapViewController: React.FC = () => {
           [drawnBBox[1], drawnBBox[0]],
           [drawnBBox[3], drawnBBox[2]],
         ], { padding: [40, 40], duration: 1.2 });
-      } else if (activeRegion?.center && typeof activeRegion.zoom === 'number') {
-        map.flyTo(activeRegion.center, activeRegion.zoom, { duration: 1.5 });
       }
     } catch (e) {
       console.warn('[MapViewController] Map navigation error caught safely:', e);
     }
-  }, [activeRegion, drawnBBox, drawnPolygon, selectedDisaster, searchLocation, map]);
+  }, [activeRegion, drawnBBox, drawnPolygon, searchLocation, map]);
 
   return null;
 };
