@@ -29,6 +29,9 @@ import { BBox } from '../../types/map';
 import { SAMPLE_REGIONS } from '../../config/sampleRegions';
 import { AISVessel, AISFilterState, AISStatusResponse, AISCorrelationMatch } from '../../types/ais';
 import { aisApi } from '../../services/aisApi';
+import { cableApi } from '../../services/cableApi';
+import { SubmarineCablesLayer } from './SubmarineCablesLayer';
+import { SubmarineCableFeature, LandingPointFeature } from '../../types/cable';
 
 // Subcomponent to handle interactive AOI drawing on map
 const MapDrawingHandler: React.FC = () => {
@@ -150,6 +153,51 @@ const AISMapIntegration: React.FC<{
   );
 };
 
+// Subcomponent inside MapContainer to continuously synchronize viewport & fetch submarine cables
+const CablesMapIntegration: React.FC = () => {
+  const map = useMap();
+  const { layers } = useMapContext();
+  const [cables, setCables] = useState<SubmarineCableFeature[]>([]);
+  const [landingPoints, setLandingPoints] = useState<LandingPointFeature[]>([]);
+
+  const fetchCablesForViewport = useCallback(async () => {
+    if (!layers.submarineCables) return;
+    try {
+      const bounds = map.getBounds();
+      const currentBBox: BBox = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ];
+      const cableData = await cableApi.getCables(currentBBox);
+      const lpData = await cableApi.getLandingPoints(currentBBox);
+      setCables(cableData.features || []);
+      setLandingPoints(lpData.features || []);
+    } catch (err) {
+      console.warn('[CablesMapIntegration] Submarine cable fetch warning:', err);
+    }
+  }, [map, layers.submarineCables]);
+
+  useEffect(() => {
+    fetchCablesForViewport();
+  }, [fetchCablesForViewport]);
+
+  useMapEvents({
+    moveend: () => fetchCablesForViewport(),
+    zoomend: () => fetchCablesForViewport(),
+  });
+
+  return (
+    <SubmarineCablesLayer
+      map={map}
+      cables={cables}
+      landingPoints={landingPoints}
+      enabled={!!layers.submarineCables}
+    />
+  );
+};
+
 const searchIcon = divIcon({
   html: `
     <div style="position: relative; display: flex; align-items: center; justify-content: center;">
@@ -229,6 +277,8 @@ export const SatelliteMap: React.FC = () => {
           onVesselsUpdated={handleVesselsUpdated}
           selectedVessel={selectedVessel}
         />
+
+        <CablesMapIntegration />
 
         {/* Primary Basemap */}
         <TileLayer

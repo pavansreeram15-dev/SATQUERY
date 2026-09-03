@@ -127,7 +127,7 @@ export const MaritimeControlBar: React.FC<MaritimeControlBarProps> = ({
 
           <button
             onClick={() => toggleLayer('aisSatelliteCorrelation')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold text-[11px] transition-all border ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-bold text-[10px] transition-all border ${
               layers.aisSatelliteCorrelation
                 ? 'bg-purple-950/90 border-purple-500/50 text-purple-300 shadow-sm'
                 : 'bg-space-850 border-slate-700 text-slate-400 hover:text-white'
@@ -135,6 +135,19 @@ export const MaritimeControlBar: React.FC<MaritimeControlBarProps> = ({
           >
             <Link2 className="w-3.5 h-3.5" />
             <span>🔗 AIS ↔ Sat Correlation</span>
+          </button>
+
+          <button
+            onClick={() => toggleLayer('submarineCables')}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg font-bold text-[10px] transition-all border ${
+              layers.submarineCables
+                ? 'bg-cyan-950/90 border-cyan-500/50 text-cyan-300 shadow-sm'
+                : 'bg-space-850 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Toggle Global Submarine Fiber Optic Cables (Gigawatt Map / TeleGeography — CC BY-NC-SA 3.0)"
+          >
+            <Radio className="w-3.5 h-3.5 text-cyan-400" />
+            <span>🌐 Submarine Cables</span>
           </button>
 
           <button
