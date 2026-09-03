@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -173,51 +173,6 @@ export const SatelliteMap: React.FC = () => {
     [displayBBox[3], displayBBox[2]],
   ];
 
-  // Draggable window state for MaritimeControlBar
-  const [panelPos, setPanelPos] = useState({ x: 20, y: 80 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({
-    startX: 0,
-    startY: 0,
-    posX: 20,
-    posY: 80,
-  });
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only trigger drag if clicked outside interactive elements (buttons/inputs)
-    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
-    setIsDragging(true);
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      posX: panelPos.x,
-      posY: panelPos.y,
-    };
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
-      setPanelPos({
-        x: Math.max(0, dragRef.current.posX + dx),
-        y: Math.max(0, dragRef.current.posY + dy),
-      });
-    };
-
-    const handleMouseUp = () => setIsDragging(false);
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
   return (
     <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-space-950">
       <MapContainer
@@ -313,19 +268,7 @@ export const SatelliteMap: React.FC = () => {
       <DisasterFilterBar />
 
       {/* Global Maritime Infrastructure Movable Window */}
-      <div
-        onMouseDown={handleMouseDown}
-        style={{
-          position: 'absolute',
-          left: `${panelPos.x}px`,
-          top: `${panelPos.y}px`,
-          cursor: isDragging ? 'grabbing' : 'grab',
-          zIndex: 1000,
-          userSelect: 'none',
-        }}
-      >
-        <MaritimeControlBar />
-      </div>
+      <MaritimeControlBar />
     </div>
   );
 };

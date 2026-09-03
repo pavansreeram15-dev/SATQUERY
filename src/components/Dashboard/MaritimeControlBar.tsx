@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { motion, useDragControls } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import L from 'leaflet';
+import { motion } from 'framer-motion';
 import { Radio, Search, X, Anchor, Globe, GripHorizontal } from 'lucide-react';
 import { useMapContext } from '../../context/MapContext';
 import { cableApi } from '../../services/cableApi';
@@ -7,11 +8,11 @@ import { cableApi } from '../../services/cableApi';
 export const MaritimeControlBar: React.FC = () => {
   const mapContext = useMapContext();
   const layers = mapContext?.layers || { submarineCables: true };
-  const toggleLayer = mapContext?.toggleLayer || (() => { });
-  const setViewportBBox = mapContext?.setViewportBBox || (() => { });
+  const toggleLayer = mapContext?.toggleLayer || (() => {});
+  const setViewportBBox = mapContext?.setViewportBBox || (() => {});
 
   const [isOpen, setIsOpen] = useState(true);
-  const dragControls = useDragControls();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<{
@@ -19,6 +20,14 @@ export const MaritimeControlBar: React.FC = () => {
     landing_points: Array<{ id: string; name: string; country?: string; coordinates?: [number, number] }>;
   }>({ cables: [], landing_points: [] });
   const [isSearching, setIsSearching] = useState(false);
+
+  // Disable Leaflet map propagation on container mount so dragging works 100% smoothly
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+      L.DomEvent.disableScrollPropagation(containerRef.current);
+    }
+  }, []);
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +60,7 @@ export const MaritimeControlBar: React.FC = () => {
 
   if (!isOpen) {
     return (
-      <div className="absolute top-16 left-14 z-[1000]">
+      <div className="absolute top-16 left-14 z-[1000] pointer-events-auto">
         <button
           onClick={() => setIsOpen(true)}
           className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-space-900/95 border border-cyan-500/50 text-cyan-300 shadow-2xl backdrop-blur-md text-xs font-mono font-bold hover:bg-space-850 hover:border-cyan-400 transition-all cursor-pointer"
@@ -67,19 +76,17 @@ export const MaritimeControlBar: React.FC = () => {
   return (
     <motion.div
       drag
-      dragListener={false}
-      dragControls={dragControls}
       dragMomentum={false}
       dragElastic={0}
-      className="absolute top-16 left-14 z-[1000] max-w-sm w-80 sm:w-96 select-none"
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute top-16 left-14 z-[1000] max-w-sm w-80 sm:w-96 select-none pointer-events-auto cursor-grab active:cursor-grabbing"
     >
-      <div className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono">
-
+      <div
+        ref={containerRef}
+        className="rounded-2xl bg-space-900/95 border border-slate-800 shadow-2xl backdrop-blur-md p-3.5 text-xs text-slate-100 space-y-3 font-mono"
+      >
         {/* Movable Window Header (Primary Drag Handle) */}
-        <div
-          onPointerDown={(e) => dragControls.start(e)}
-          className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5 cursor-grab active:cursor-grabbing touch-none select-none"
-        >
+        <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
           <div className="flex items-center gap-2 pointer-events-none">
             <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
@@ -181,10 +188,11 @@ export const MaritimeControlBar: React.FC = () => {
         <div className="w-full flex items-center justify-center">
           <button
             onClick={() => toggleLayer('submarineCables')}
-            className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border shadow-lg cursor-pointer ${layers.submarineCables
+            className={`w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border shadow-lg cursor-pointer ${
+              layers.submarineCables
                 ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-300 shadow-cyan-950/50'
                 : 'bg-space-850 border-slate-700 text-slate-400 hover:text-white'
-              }`}
+            }`}
             title="Toggle Global Submarine Fiber Optic Cables (Gigawatt Map / TeleGeography — CC BY-NC-SA 3.0)"
           >
             <Radio className="w-4 h-4 text-cyan-400" />
