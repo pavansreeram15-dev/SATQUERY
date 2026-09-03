@@ -89,9 +89,9 @@ export const MaritimeControlBar: React.FC = () => {
       </form>
 
       {/* Search Results Dropdown */}
-      {(searchResults.cables.length > 0 || searchResults.landing_points.length > 0) && (
+      {((searchResults?.cables?.length ?? 0) > 0 || (searchResults?.landing_points?.length ?? 0) > 0) && (
         <div className="p-2 rounded-xl bg-space-950 border border-slate-800 space-y-1.5 max-h-48 overflow-y-auto animate-in fade-in">
-          {searchResults.cables.length > 0 && (
+          {searchResults.cables && searchResults.cables.length > 0 && (
             <div className="space-y-1">
               <div className="text-[10px] text-cyan-400 font-bold uppercase flex items-center gap-1">
                 <Globe className="w-3 h-3" />
@@ -109,7 +109,7 @@ export const MaritimeControlBar: React.FC = () => {
             </div>
           )}
 
-          {searchResults.landing_points.length > 0 && (
+          {searchResults.landing_points && searchResults.landing_points.length > 0 && (
             <div className="space-y-1 pt-1 border-t border-slate-800">
               <div className="text-[10px] text-sky-400 font-bold uppercase flex items-center gap-1">
                 <Anchor className="w-3 h-3" />

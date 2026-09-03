@@ -104,7 +104,7 @@ const CablesMapIntegration: React.FC = () => {
   const [landingPoints, setLandingPoints] = useState<LandingPointFeature[]>([]);
 
   const fetchCablesForViewport = useCallback(async () => {
-    if (!layers.submarineCables) return;
+    if (!layers?.submarineCables) return;
     try {
       const bounds = map.getBounds();
       const currentBBox: BBox = [
@@ -115,12 +115,12 @@ const CablesMapIntegration: React.FC = () => {
       ];
       const cableData = await cableApi.getCables(currentBBox);
       const lpData = await cableApi.getLandingPoints(currentBBox);
-      setCables(cableData.features || []);
-      setLandingPoints(lpData.features || []);
+      setCables(cableData?.features || []);
+      setLandingPoints(lpData?.features || []);
     } catch (err) {
       console.warn('[CablesMapIntegration] Submarine cable fetch warning:', err);
     }
-  }, [map, layers.submarineCables]);
+  }, [map, layers?.submarineCables]);
 
   useEffect(() => {
     fetchCablesForViewport();
@@ -136,7 +136,7 @@ const CablesMapIntegration: React.FC = () => {
       map={map}
       cables={cables}
       landingPoints={landingPoints}
-      enabled={!!layers.submarineCables}
+      enabled={!!layers?.submarineCables}
     />
   );
 };

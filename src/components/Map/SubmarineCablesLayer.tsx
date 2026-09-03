@@ -45,8 +45,12 @@ export const SubmarineCablesLayer: React.FC<SubmarineCablesLayerProps> = ({
 
     if (!enabled) return;
 
+    const safeCables = Array.isArray(cables) ? cables : [];
+    const safeLandingPoints = Array.isArray(landingPoints) ? landingPoints : [];
+
     // 1. Render Submarine Cable GeoJSON Routes (LineStrings / MultiLineStrings)
-    cables.forEach((feat) => {
+    safeCables.forEach((feat) => {
+      if (!feat || !feat.properties) return;
       const props = feat.properties;
       const color = props.color || '#06b6d4';
 
@@ -114,7 +118,8 @@ export const SubmarineCablesLayer: React.FC<SubmarineCablesLayerProps> = ({
     });
 
     // 2. Render Landing Point Markers (GeoJSON Points)
-    landingPoints.forEach((lp) => {
+    safeLandingPoints.forEach((lp) => {
+      if (!lp || !lp.properties || !lp.geometry) return;
       const props = lp.properties;
       const coords = lp.geometry.coordinates; // [lon, lat]
 
