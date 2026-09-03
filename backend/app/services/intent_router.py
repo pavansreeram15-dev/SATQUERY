@@ -29,11 +29,15 @@ def classify_intent(prompt: str, persona: UserPersona = UserPersona.PUBLIC_RESEA
     if re.search(r'\b(ndwi|water bod|reservoir|lake|river|water extent|wetland|estuary|aquatic|shoreline|coastal change)\b', text):
         return QueryIntent.NDWI_ANALYSIS, 0.93
 
-    # 6. Spectral & SAR analysis
+    # 6. Maritime & Live AIS Vessel Tracking queries
+    if re.search(r'\b(vessel|vessels|ais|ship tracking|maritime|ship mmsi|mmsi|track this vessel|vessels matching|vessels near|cargo ship|cargo ships|tanker|tankers|suez canal|panama canal|port of)\b', text):
+        return QueryIntent.MARITIME_VESSEL_TRACKING, 0.95
+
+    # 7. Spectral & SAR analysis
     if re.search(r'\b(spectral|sar|radar|backscatter|band ratio|reflectance|multi-spectral|c-sar|polarization)\b', text):
         return QueryIntent.SPECTRAL_ANALYSIS, 0.91
 
-    # 7. Settlement & Object detection / localization
+    # 8. Settlement & Object detection / localization
     if re.search(r'\b(detect|find|identify|locate|spot|where are|highlight|settlement|settlements|village|villages|residential area)\b', text):
         return QueryIntent.OBJECT_DETECTION, 0.92
 

@@ -45,4 +45,6 @@ export interface ActiveLayerState {
   bhuvanGeomorph: boolean;
   bboxDrawMode: boolean;
   splitComparison: boolean;
+  liveAisVessels?: boolean;
+  aisSatelliteCorrelation?: boolean;
 }

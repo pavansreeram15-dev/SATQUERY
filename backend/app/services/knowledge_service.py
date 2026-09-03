@@ -254,6 +254,18 @@ class KnowledgeService:
                 f"Current status is evaluated as **{status}**. Low-lying riverine sectors and populated community basins "
                 f"should maintain standard hydrological watch protocols, with automated multi-temporal SAR surveillance active."
             )
+        elif "MARITIME" in intent or "VESSEL" in intent:
+            vessel_cnt = metrics.get("vessel_count", 0)
+            return (
+                f"### 🚢 Real-Time Maritime & Live AIS Vessel Intelligence\n"
+                f"Live AIS telemetry and satellite surveillance across **{region_name}** currently monitors active maritime vessels.{wiki_intro}\n\n"
+                f"### 🛰️ AISStream Telemetry & Spatial Correlation\n"
+                f"AISStream.io WebSocket connection tracks active cargo, tanker, passenger, and fishing craft in real time. "
+                f"Synthetic Aperture Radar (SAR) ship detection vectors are correlated against broadcast positions.\n\n"
+                f"### 🛡️ Operational Maritime Tracking\n"
+                f"Vessels are georeferenced in WGS 84 space with real-time speed, course, and navigational status logging. "
+                f"Port authorities and coast guard intelligence can track vessel movement vectors and audit AIS compliance."
+            )
         elif "OBJECT" in intent or "SETTLEMENT" in intent:
             cnt = metrics.get("count", 4)
             return (

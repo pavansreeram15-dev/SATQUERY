@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -6,7 +6,6 @@ import {
   Polygon,
   Marker,
   Popup,
-  CircleMarker,
   useMap,
   useMapEvents,
 } from 'react-leaflet';
@@ -20,12 +19,48 @@ import { FloodLayer } from './FloodLayer';
 import { ChangeLayer } from './ChangeLayer';
 import { BhuvanLayer } from './BhuvanLayer';
 import { LiveDisastersLayer } from './LiveDisastersLayer';
+import { AISVesselsLayer } from './AISVesselsLayer';
+import { AISCorrelationLayer } from './AISCorrelationLayer';
+import { MaritimeControlBar } from '../Dashboard/MaritimeControlBar';
 import { DisasterInfoPanel } from '../Dashboard/DisasterInfoPanel';
 import { DisasterFilterBar } from '../Dashboard/DisasterFilterBar';
-import { LatLng, divIcon } from 'leaflet';
-import { BBox, LatLngCoord } from '../../types/map';
+import { divIcon } from 'leaflet';
+import { BBox } from '../../types/map';
 import { SAMPLE_REGIONS } from '../../config/sampleRegions';
-import { MapPin, Sparkles } from 'lucide-react';
+import { AISVessel, AISFilterState, AISStatusResponse, AISCorrelationMatch } from '../../types/ais';
+import { aisApi } from '../../services/aisApi';
+
+// Subcomponent to handle interactive AOI drawing on map
+const MapDrawingHandler: React.FC = () => {
+  const { drawMode, setDrawnBBox, setDrawnPolygon, setIsDrawingBBox } = useMapContext();
+  const [startPoint, setStartPoint] = useState<[number, number] | null>(null);
+
+  useMapEvents({
+    click: (e) => {
+      if (drawMode === 'box') {
+        if (!startPoint) {
+          setStartPoint([e.latlng.lat, e.latlng.lng]);
+          setIsDrawingBBox(true);
+        } else {
+          const minLat = Math.min(startPoint[0], e.latlng.lat);
+          const maxLat = Math.max(startPoint[0], e.latlng.lat);
+          const minLng = Math.min(startPoint[1], e.latlng.lng);
+          const maxLng = Math.max(startPoint[1], e.latlng.lng);
+          setDrawnBBox([
+            Number(minLng.toFixed(4)),
+            Number(minLat.toFixed(4)),
+            Number(maxLng.toFixed(4)),
+            Number(maxLat.toFixed(4)),
+          ]);
+          setStartPoint(null);
+          setIsDrawingBBox(false);
+        }
+      }
+    },
+  });
+
+  return null;
+};
 
 // Subcomponent to animate and synchronize map center/zoom with active region, search location, or disaster
 const MapViewController: React.FC = () => {
@@ -62,91 +97,69 @@ const MapViewController: React.FC = () => {
   return null;
 };
 
-// Subcomponent to handle interactive AOI drawing (Rectangle and Polygon)
-const MapDrawingHandler: React.FC = () => {
-  const {
-    isDrawingBBox,
-    drawMode,
-    setDrawnBBox,
-    setDrawnPolygon,
-    setIsDrawingBBox,
-    setDrawMode,
-    setViewportBBox,
-    setQueryResult,
-    setSelectedFeature,
-  } = useMapContext();
+// Subcomponent inside MapContainer to continuously synchronize viewport & fetch live AIS vessels
+const AISMapIntegration: React.FC<{
+  filters: AISFilterState;
+  onVesselsUpdated: (vessels: AISVessel[], status: AISStatusResponse | null) => void;
+  selectedVessel: AISVessel | null;
+}> = ({ filters, onVesselsUpdated, selectedVessel }) => {
+  const map = useMap();
+  const { layers, queryResult } = useMapContext();
+  const [vessels, setVessels] = useState<AISVessel[]>([]);
+  const [correlations, setCorrelations] = useState<AISCorrelationMatch[]>([]);
 
-  const [boxStart, setBoxStart] = useState<LatLng | null>(null);
-  const [polyPoints, setPolyPoints] = useState<LatLngCoord[]>([]);
+  const fetchVesselsForViewport = useCallback(async () => {
+    try {
+      const bounds = map.getBounds();
+      const currentBBox: BBox = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ];
+      const liveVessels = await aisApi.getVessels(currentBBox, filters);
+      setVessels(liveVessels);
+      const st = await aisApi.getStatus();
+      onVesselsUpdated(liveVessels, st);
+
+      if (layers.aisSatelliteCorrelation && queryResult?.geojson_data?.features) {
+        const corr = await aisApi.correlateSatellite(queryResult.geojson_data.features, currentBBox);
+        setCorrelations(corr);
+      }
+    } catch (err) {
+      console.warn('[AISMapIntegration] Fetch error:', err);
+    }
+  }, [map, filters, layers.aisSatelliteCorrelation, queryResult, onVesselsUpdated]);
+
+  useEffect(() => {
+    fetchVesselsForViewport();
+    const interval = setInterval(fetchVesselsForViewport, 10000);
+    return () => clearInterval(interval);
+  }, [fetchVesselsForViewport]);
 
   useMapEvents({
-    click(e) {
-      if (!isDrawingBBox) return;
-
-      if (drawMode === 'box') {
-        if (!boxStart) {
-          setBoxStart(e.latlng);
-        } else {
-          const minLon = Math.min(boxStart.lng, e.latlng.lng);
-          const maxLon = Math.max(boxStart.lng, e.latlng.lng);
-          const minLat = Math.min(boxStart.lat, e.latlng.lat);
-          const maxLat = Math.max(boxStart.lat, e.latlng.lat);
-
-          const newBBox: BBox = [
-            Number(minLon.toFixed(4)),
-            Number(minLat.toFixed(4)),
-            Number(maxLon.toFixed(4)),
-            Number(maxLat.toFixed(4)),
-          ];
-
-          setDrawnBBox(newBBox);
-          setDrawnPolygon(null);
-          setViewportBBox(newBBox);
-          setQueryResult(null);
-          setSelectedFeature(null);
-          setBoxStart(null);
-          setIsDrawingBBox(false);
-          setDrawMode(null);
-        }
-      } else if (drawMode === 'polygon') {
-        const newPt: LatLngCoord = [Number(e.latlng.lat.toFixed(5)), Number(e.latlng.lng.toFixed(5))];
-        const nextPoints = [...polyPoints, newPt];
-        setPolyPoints(nextPoints);
-
-        // Calculate bounding box of polygon points
-        const lats = nextPoints.map((p) => p[0]);
-        const lons = nextPoints.map((p) => p[1]);
-        const newBBox: BBox = [
-          Number(Math.min(...lons).toFixed(4)),
-          Number(Math.min(...lats).toFixed(4)),
-          Number(Math.max(...lons).toFixed(4)),
-          Number(Math.max(...lats).toFixed(4)),
-        ];
-
-        setDrawnPolygon(nextPoints);
-        setDrawnBBox(newBBox);
-        setViewportBBox(newBBox);
-      }
-    },
-    dblclick(e) {
-      if (isDrawingBBox && drawMode === 'polygon' && polyPoints.length >= 3) {
-        setIsDrawingBBox(false);
-        setDrawMode(null);
-        setPolyPoints([]);
-      }
-    },
+    moveend: () => fetchVesselsForViewport(),
+    zoomend: () => fetchVesselsForViewport(),
   });
 
-  return null;
+  return (
+    <>
+      <AISVesselsLayer map={map} vessels={vessels} enabled={!!layers.liveAisVessels} />
+      <AISCorrelationLayer map={map} correlations={correlations} enabled={!!layers.aisSatelliteCorrelation} />
+    </>
+  );
 };
 
-// Search Pin Icon
 const searchIcon = divIcon({
   html: `
-    <div class="relative flex items-center justify-center">
-      <span class="absolute w-8 h-8 rounded-full bg-cyan-500/30 animate-ping"></span>
-      <div class="w-6 h-6 rounded-full bg-cyan-500 text-black flex items-center justify-center shadow-lg shadow-cyan-500/50 border-2 border-white">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+      <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(6, 182, 212, 0.3); border: 1.5px solid #06b6d4; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+      <div style="width: 24px; height: 24px; border-radius: 50%; background: #0891b2; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+          <path d="M2 12h20"/>
+        </svg>
       </div>
     </div>
   `,
@@ -162,12 +175,43 @@ export const SatelliteMap: React.FC = () => {
   const safeLayers = layers || { basemap: 'satellite', liveDisasters: true };
   const basemap = BASEMAP_TILES[safeLayers.basemap] || BASEMAP_TILES.satellite;
 
+  // Maritime State
+  const [aisVessels, setAisVessels] = useState<AISVessel[]>([]);
+  const [aisStatus, setAisStatus] = useState<AISStatusResponse | null>(null);
+  const [searchResults, setSearchResults] = useState<AISVessel[]>([]);
+  const [selectedVessel, setSelectedVessel] = useState<AISVessel | null>(null);
+  const [aisFilters, setAisFilters] = useState<AISFilterState>({
+    selectedTypes: [],
+    speedRange: 'ALL',
+    navStatus: 'ALL',
+    searchQuery: '',
+  });
+
   // Selected rectangle coordinates
   const displayBBox = drawnBBox || safeActiveRegion.bbox || [80.27, 13.07, 80.34, 13.14];
   const rectangleBounds: [[number, number], [number, number]] = [
     [displayBBox[1], displayBBox[0]],
     [displayBBox[3], displayBBox[2]],
   ];
+
+  const handleVesselSearch = async (q: string) => {
+    setAisFilters((prev) => ({ ...prev, searchQuery: q }));
+    if (q.trim()) {
+      try {
+        const res = await aisApi.searchVessels(q);
+        setSearchResults(res.vessels);
+      } catch (err) {
+        setSearchResults([]);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleVesselsUpdated = useCallback((vessels: AISVessel[], status: AISStatusResponse | null) => {
+    setAisVessels(vessels);
+    setAisStatus(status);
+  }, []);
 
   return (
     <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-space-950">
@@ -179,6 +223,12 @@ export const SatelliteMap: React.FC = () => {
       >
         <MapViewController />
         <MapDrawingHandler />
+        
+        <AISMapIntegration
+          filters={aisFilters}
+          onVesselsUpdated={handleVesselsUpdated}
+          selectedVessel={selectedVessel}
+        />
 
         {/* Primary Basemap */}
         <TileLayer
@@ -244,6 +294,19 @@ export const SatelliteMap: React.FC = () => {
         {/* Live Global Disaster & Earth Event Intelligence Layer */}
         <LiveDisastersLayer />
       </MapContainer>
+
+      {/* Floating Maritime Control Bar (Top Right) */}
+      <div className="absolute top-4 right-4 z-[360] w-80 max-w-[calc(100vw-2rem)]">
+        <MaritimeControlBar
+          status={aisStatus}
+          vesselsCount={aisVessels.length}
+          filters={aisFilters}
+          onFilterChange={setAisFilters}
+          onSearchVessel={handleVesselSearch}
+          searchResults={searchResults}
+          onSelectVessel={setSelectedVessel}
+        />
+      </div>
 
       {/* Live Disasters Filter & Multi-Hazard Controls Toolbar */}
       <DisasterFilterBar />

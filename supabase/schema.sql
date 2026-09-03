@@ -110,6 +110,27 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 9. Vessel Positions Table (Real-Time AIS Tracking & PostGIS Spatial Telemetry)
+CREATE TABLE IF NOT EXISTS public.vessel_positions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    mmsi TEXT NOT NULL,
+    imo TEXT,
+    vessel_name TEXT NOT NULL,
+    callsign TEXT,
+    latitude NUMERIC(9, 6) NOT NULL,
+    longitude NUMERIC(9, 6) NOT NULL,
+    speed_knots NUMERIC(5, 2) DEFAULT 0.0,
+    course NUMERIC(5, 2) DEFAULT 0.0,
+    heading NUMERIC(5, 2) DEFAULT 0.0,
+    navigation_status TEXT DEFAULT 'Under Way',
+    ship_type TEXT DEFAULT 'Cargo',
+    destination TEXT,
+    timestamp TIMESTAMPTZ NOT NULL,
+    source TEXT DEFAULT 'AISStream',
+    location GEOMETRY(Point, 4326),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- =========================================================
 -- SPATIAL & INDEX OPTIMIZATION
 -- =========================================================
