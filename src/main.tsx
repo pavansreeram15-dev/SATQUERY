@@ -1,3 +1,11 @@
+import L from 'leaflet';
+
+// Ensure Leaflet global is attached before any plugin scripts evaluate
+if (typeof window !== 'undefined') {
+  (window as any).L = L;
+  (globalThis as any).L = L;
+}
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

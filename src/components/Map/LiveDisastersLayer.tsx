@@ -1,13 +1,20 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
+
+// Ensure global Leaflet is defined before evaluating plugin
+if (typeof window !== 'undefined') {
+  (window as any).L = L;
+  (globalThis as any).L = L;
+}
+
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 import { useMapContext } from '../../context/MapContext';
 import { disasterService } from '../../services/disasterService';
-import { EarthEvent, DisasterGeoJSONFeature, DisasterType } from '../../types/disaster';
+import { EarthEvent, DisasterGeoJSONFeature } from '../../types/disaster';
 
 const HAZARD_COLORS: Record<string, string> = {
   earthquake: '#EF4444', // Red
@@ -46,7 +53,12 @@ export const LiveDisastersLayer: React.FC = () => {
   } = useMapContext();
 
   const clusterGroupRef = useRef<any>(null);
-  const canvasRendererRef = useRef<L.Canvas>(L.canvas({ padding: 0.5 }));
+  const canvasRendererRef = useRef<L.Canvas | null>(null);
+
+  // Initialize canvas renderer safely
+  if (!canvasRendererRef.current && typeof L !== 'undefined' && L.canvas) {
+    canvasRendererRef.current = L.canvas({ padding: 0.5 });
+  }
 
   // 1. Initial Data Fetch & Periodic Background Sync
   useEffect(() => {
@@ -182,26 +194,31 @@ export const LiveDisastersLayer: React.FC = () => {
     }
 
     // Create marker cluster group with HTML5 Canvas chunkedLoading configuration
-    const clusterGroup = (L as any).markerClusterGroup({
-      chunkedLoading: true,
-      chunkInterval: 100,
-      chunkDelay: 10,
-      showCoverageOnHover: false,
-      spiderfyOnMaxZoom: false,
-      disableClusteringAtZoom: 15,
-      maxClusterRadius: 40,
-      iconCreateFunction: (cluster: any) => {
-        const count = cluster.getChildCount();
-        const size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
-        return L.divIcon({
-          html: `<div class="satquery-cluster satquery-cluster-${size}"><span>${count}</span></div>`,
-          className: 'satquery-cluster-wrapper',
-          iconSize: L.point(36, 36),
-        });
-      },
-    });
+    let clusterGroup: any;
+    if (typeof (L as any).markerClusterGroup === 'function') {
+      clusterGroup = (L as any).markerClusterGroup({
+        chunkedLoading: true,
+        chunkInterval: 100,
+        chunkDelay: 10,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: false,
+        disableClusteringAtZoom: 15,
+        maxClusterRadius: 40,
+        iconCreateFunction: (cluster: any) => {
+          const count = cluster.getChildCount();
+          const size = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
+          return L.divIcon({
+            html: `<div class="satquery-cluster satquery-cluster-${size}"><span>${count}</span></div>`,
+            className: 'satquery-cluster-wrapper',
+            iconSize: L.point(36, 36),
+          });
+        },
+      });
+    } else {
+      clusterGroup = L.featureGroup();
+    }
 
-    const renderer = canvasRendererRef.current;
+    const renderer = canvasRendererRef.current || L.canvas({ padding: 0.5 });
 
     filteredFeatures.forEach((feat) => {
       const p = feat.properties;
@@ -278,7 +295,7 @@ export const LiveDisastersLayer: React.FC = () => {
           </div>
 
           <div style="display: flex; gap: 6px; border-top: 1px solid #1e293b; padding-top: 8px;">
-            <button id="btn-sat-analyze-${p.id}" style="flex: 1; padding: 6px 10px; background: #0891b2; hover: background: #06b6d4; color: #000000; font-weight: bold; font-size: 10px; border-radius: 6px; border: none; cursor: pointer;">
+            <button id="btn-sat-analyze-${p.id}" style="flex: 1; padding: 6px 10px; background: #0891b2; color: #000000; font-weight: bold; font-size: 10px; border-radius: 6px; border: none; cursor: pointer;">
               🛰️ Analyze Satellite
             </button>
             ${
