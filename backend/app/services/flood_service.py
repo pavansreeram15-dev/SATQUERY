@@ -14,7 +14,7 @@ class FloodAnalysisService:
         bbox: List[float],
         flooded_area_km2: float,
         water_polygons: List[Dict[str, Any]],
-        confidence: float = 0.942,
+        confidence: Optional[float] = None,
         is_validated_disaster_zone: bool = False,
         baseline_water_km2: float = 0.0,
         is_demo: bool = False

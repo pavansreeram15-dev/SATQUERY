@@ -140,21 +140,22 @@ class WeatherService:
             self._last_latency_ms = int((time.time() - start_time) * 1000)
             self._last_health_check = datetime.now(timezone.utc).isoformat()
 
-        # Resilient fallback
+        # Explicit NO_DATA response when weather telemetry is unavailable
         return {
             "success": False,
-            "source": "Open-Meteo (Offline Estimate)",
+            "status": "NO_DATA",
+            "source": "Open-Meteo Weather API",
             "latitude": lat,
             "longitude": lon,
-            "weather_condition": "Clear Sky / Typical Regional Baseline",
-            "temperature_celsius": 26.5,
-            "relative_humidity_percent": 60,
-            "wind_speed_kmh": 10.0,
-            "current_rain_mm": 0.0,
-            "rainfall_7d_total_mm": 5.2,
+            "weather_condition": None,
+            "temperature_celsius": None,
+            "relative_humidity_percent": None,
+            "wind_speed_kmh": None,
+            "current_rain_mm": None,
+            "rainfall_7d_total_mm": None,
             "is_heavy_rain": False,
-            "summary": "Typical meteorological baseline. No anomalous precipitation reported.",
-            "daily_precipitation_series": [0.0, 0.5, 1.2, 0.0, 2.1, 1.4, 0.0]
+            "summary": "Precipitation data unavailable for these coordinates.",
+            "daily_precipitation_series": []
         }
 
 weather_service = WeatherService()

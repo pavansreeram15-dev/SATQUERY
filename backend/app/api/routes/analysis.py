@@ -279,6 +279,8 @@ async def execute_geospatial_query(request: QueryRequest = Body(...)):
     except Exception:
         pass
 
+    aoi_hash = f"BBOX-{round(active_bbox[0],3)}_{round(active_bbox[1],3)}_{round(active_bbox[2],3)}_{round(active_bbox[3],3)}"
+
     response = QueryResponse(
         success=True,
         query=request.prompt,
@@ -311,13 +313,9 @@ async def execute_geospatial_query(request: QueryRequest = Body(...)):
             "before_year": parsed.get("before_year"),
             "after_year": parsed.get("after_year")
         }),
-        analysis=result.get("analysis", {
-            "intent": intent.value,
-            "target_classes": target_classes,
-            "count": result.get("count_metric")
-        }),
-        statistics=result.get("statistics", result.get("metrics", {})),
-        summary_text=result["summary_text"],
+        analysis=result.get("analysis", {}),
+        statistics=result.get("statistics", {}),
+        summary_text=result.get("summary_text", "Geospatial analysis completed."),
         count_metric=result.get("count_metric"),
         average_confidence=result.get("average_confidence"),
         confidence=result.get("average_confidence"),

@@ -182,6 +182,8 @@ export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setViewportBBox(disasterBBox);
     setDrawnBBox(disasterBBox);
     setSelectedDisaster(disaster);
+    setQueryResult(null);
+    setSelectedFeature(null);
   };
 
   return (

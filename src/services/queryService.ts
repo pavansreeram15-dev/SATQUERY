@@ -216,9 +216,7 @@ export const queryService = {
       return await fetchApi<AnalyticsSummary>(`/api/analytics${q}`);
     } catch {
       return {
-        total_queries: 48,
-        total_detections: 156,
-        average_confidence: 0.942,
+        average_confidence: 0,
         average_processing_time_ms: 1140,
         most_requested_intent: 'OBJECT_COUNT',
         intent_distribution: {
@@ -519,8 +517,6 @@ async function createClientFallbackResponse(request: QueryRequest): Promise<Quer
           inundation_risk: 'ELEVATED_WATCH',
           status: 'WATCH',
           area_km2: Number((areaKm2 * 0.08).toFixed(2)),
-          confidence: 0.945,
-          confidence_percent: '94.5%'
         }
       },
       {

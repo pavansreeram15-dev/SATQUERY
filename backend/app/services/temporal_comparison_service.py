@@ -105,7 +105,6 @@ class TemporalComparisonService:
                     "area_km2": water_expansion_km2,
                     "before_state": "Vegetated Floodplain / Lowland",
                     "after_state": "Submerged Surface Water",
-                    "confidence": 0.942,
                     "sensor": sensor_name,
                     "delta_metric": "+8.2% Surface Water Coverage"
                 }

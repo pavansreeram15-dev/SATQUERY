@@ -53,6 +53,7 @@ class QueryResponse(BaseModel):
     comparison_data: Optional[Dict[str, Any]] = Field(default=None, description="Multi-temporal before/after delta comparison")
     processing_time_ms: int
     execution_pipeline: List[str] = Field(default_factory=list)
+    aoi_hash: Optional[str] = Field(default=None, description="Spatial fingerprint of the active BBOX for stale-result invalidation")
     metadata: Dict[str, Any] = Field(default_factory=dict)
     timestamp: str
     audit_id: str

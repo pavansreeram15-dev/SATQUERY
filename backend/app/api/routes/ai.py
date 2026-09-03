@@ -6,13 +6,21 @@ router = APIRouter()
 
 @router.get("/knowledge/wiki")
 async def get_wikipedia_knowledge(
-    q: str = Query(..., min_length=1, description="Region, city, river, or place name")
+    q: Optional[str] = Query(None, description="Region, city, river, or place name"),
+    lat: Optional[float] = Query(None, description="Latitude coordinate"),
+    lon: Optional[float] = Query(None, description="Longitude coordinate")
 ):
     """
-    Fetch factual geographical, topographical, and demographic context via Wikipedia REST API.
+    Fetch factual geographical, topographical, and demographic context via official MediaWiki GeoSearch API.
     """
-    wiki_info = await knowledge_service.get_wikipedia_summary(query_or_place=q)
-    return {"query": q, "knowledge": wiki_info}
+    if lat is not None and lon is not None:
+        wiki_info = await knowledge_service.get_wikipedia_geosearch(lat=lat, lon=lon)
+        return {"query": q or f"({lat}, {lon})", "knowledge": wiki_info}
+    elif q:
+        wiki_info = await knowledge_service.get_wikipedia_summary(query_or_place=q)
+        return {"query": q, "knowledge": wiki_info}
+    
+    return {"query": None, "knowledge": {"status": "NO_DATA", "message": "Latitude and longitude or query parameter required."}}
 
 @router.post("/knowledge/brief")
 async def get_ai_knowledge_brief(request: Dict[str, Any] = Body(...)):

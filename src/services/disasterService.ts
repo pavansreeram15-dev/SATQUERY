@@ -243,7 +243,6 @@ export const disasterService = {
               magnitude: latestGeom.magnitudeValue,
               severity: 'major' as DisasterSeverity,
               alert_level: 'orange' as DisasterAlertLevel,
-              confidence: 0.94,
               start_time: eventDateStr,
               updated_time: eventDateStr,
               source_url: ev.sources?.[0]?.url || `https://eonet.gsfc.nasa.gov/api/v3/events/${ev.id}`,

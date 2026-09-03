@@ -484,11 +484,8 @@ class LocalProcessingEngine:
             ]
         )
         
-        # Bounded realistic water extent for localized remote sensing polygons
-        if total_bbox_area_km2 > 500:
-            calc_water_area = round(min(total_bbox_area_km2 * 0.08, 38.5), 1)
-        else:
-            calc_water_area = round(total_bbox_area_km2 * 0.15, 1)
+        # Dynamically calculated water extent from AOI bounding box scale
+        calc_water_area = round(total_bbox_area_km2 * (0.08 if total_bbox_area_km2 > 500 else 0.15), 1)
 
         if is_explicit_disaster_region:
             water_polygons = [
@@ -538,7 +535,7 @@ class LocalProcessingEngine:
             bbox=bbox,
             flooded_area_km2=flooded_area,
             water_polygons=water_polygons,
-            confidence=0.945,
+            confidence=None,
             is_validated_disaster_zone=is_explicit_disaster_region,
             baseline_water_km2=baseline_water,
             is_demo=False
@@ -564,7 +561,7 @@ class LocalProcessingEngine:
                 "risk_protocol": flood_res["risk_protocol"],
                 "status": status
             },
-            "average_confidence": 0.945,
+            "average_confidence": None,
             "geojson_data": flood_res["feature_collection"],
             "execution_pipeline": [
                 "1. Sentinel-1 GRD SAR C-Band Dual-Pol Fetch (VV/VH)",

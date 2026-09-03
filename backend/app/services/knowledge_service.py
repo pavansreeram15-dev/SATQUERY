@@ -2,29 +2,128 @@ import os
 import httpx
 import logging
 from typing import Dict, Any, Optional, List
+from datetime import datetime, timezone
 
 logger = logging.getLogger("satquery.knowledge")
 
 class KnowledgeService:
     """
     Multimodal Geospatial Knowledge & AI Synthesis Subsystem.
-    Provides free, keyless geographic knowledge extraction via Wikipedia REST API
-    and deep, descriptive remote sensing intelligence synthesis via Google Gemini API (Free Tier).
+    Provides free, keyless geographic knowledge extraction via official MediaWiki GeoSearch API
+    and deep, descriptive remote sensing intelligence synthesis via Google Gemini API.
     """
 
     def __init__(self):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
 
+    async def get_wikipedia_geosearch(
+        self,
+        lat: float,
+        lon: float,
+        radius_m: int = 10000,
+        limit: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Retrieve real Wikipedia articles near latitude and longitude coordinates
+        using the official MediaWiki GeoSearch API.
+        """
+        now_iso = datetime.now(timezone.utc).isoformat()
+        geosearch_url = "https://en.wikipedia.org/w/api.php"
+        params = {
+            "action": "query",
+            "list": "geosearch",
+            "gscoord": f"{lat}|{lon}",
+            "gsradius": radius_m,
+            "gslimit": limit,
+            "format": "json"
+        }
+        headers = {"User-Agent": "SATQUERY-AI/1.0 (EarthIntelligenceResearch)"}
+
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            try:
+                res = await client.get(geosearch_url, params=params, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    search_results = data.get("query", {}).get("geosearch", [])
+                    if not search_results:
+                        return {
+                            "status": "NO_DATA",
+                            "message": "No Wikipedia geographic information found for this location.",
+                            "source": "Wikipedia",
+                            "latitude": lat,
+                            "longitude": lon,
+                            "retrieved_at": now_iso,
+                            "articles": []
+                        }
+
+                    page_ids = "|".join(str(item["pageid"]) for item in search_results[:3])
+                    details_params = {
+                        "action": "query",
+                        "prop": "extracts|pageimages|info",
+                        "exintro": 1,
+                        "explaintext": 1,
+                        "inprop": "url",
+                        "piprop": "thumbnail",
+                        "pithumbsize": 300,
+                        "pageids": page_ids,
+                        "format": "json"
+                    }
+                    details_res = await client.get(geosearch_url, params=details_params, headers=headers)
+                    articles = []
+                    if details_res.status_code == 200:
+                        pages = details_res.json().get("query", {}).get("pages", {})
+                        for item in search_results[:3]:
+                            pid = str(item["pageid"])
+                            page_data = pages.get(pid, {})
+                            title = page_data.get("title", item.get("title"))
+                            extract = page_data.get("extract") or ""
+                            articles.append({
+                                "page_id": item["pageid"],
+                                "title": title,
+                                "distance_m": item.get("dist", 0),
+                                "latitude": item.get("lat", lat),
+                                "longitude": item.get("lon", lon),
+                                "extract": extract[:800],
+                                "thumbnail_url": page_data.get("thumbnail", {}).get("source"),
+                                "source_url": page_data.get("fullurl") or f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+                            })
+
+                    if articles:
+                        primary = articles[0]
+                        return {
+                            "status": "AVAILABLE",
+                            "source": "Wikipedia",
+                            "title": primary["title"],
+                            "extract": primary["extract"],
+                            "description": f"Wikipedia geographic entry near ({round(lat,4)}, {round(lon,4)})",
+                            "thumbnail_url": primary["thumbnail_url"],
+                            "source_url": primary["source_url"],
+                            "coordinates": {"lat": primary["latitude"], "lon": primary["longitude"]},
+                            "distance_m": primary["distance_m"],
+                            "retrieved_at": now_iso,
+                            "articles": articles
+                        }
+            except Exception as e:
+                logger.warning(f"MediaWiki GeoSearch error for ({lat}, {lon}): {e}")
+
+        return {
+            "status": "NO_DATA",
+            "message": "Geographic knowledge unavailable from Wikipedia for this location.",
+            "source": "Wikipedia",
+            "latitude": lat,
+            "longitude": lon,
+            "retrieved_at": now_iso,
+            "articles": []
+        }
+
     async def get_wikipedia_summary(self, query_or_place: str) -> Optional[Dict[str, Any]]:
         """
-        Fetch factual geographic, demographic, and topographical intelligence
-        from the official Wikimedia / Wikipedia REST API (100% Free & Keyless).
+        Fallback title-based lookup for place names.
         """
         clean_name = query_or_place.strip().replace(" ", "_")
         if not clean_name:
             return None
 
-        # Try clean search terms
         search_candidates = [
             clean_name,
             clean_name.split(",")[0].strip(),
@@ -45,12 +144,15 @@ class KnowledgeService:
                         extract = data.get("extract")
                         if extract:
                             return {
+                                "status": "AVAILABLE",
+                                "source": "Wikipedia",
                                 "title": data.get("title", term),
                                 "description": data.get("description", "Geographic Entity"),
                                 "extract": extract,
                                 "thumbnail_url": data.get("thumbnail", {}).get("source"),
                                 "source_url": data.get("content_urls", {}).get("desktop", {}).get("page"),
-                                "coordinates": data.get("coordinates")
+                                "coordinates": data.get("coordinates"),
+                                "retrieved_at": datetime.now(timezone.utc).isoformat()
                             }
                 except Exception as e:
                     logger.debug(f"Wikipedia lookup error for {term}: {e}")

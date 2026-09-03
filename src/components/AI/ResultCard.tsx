@@ -56,23 +56,55 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
   const highConf = metrics.high_confidence ?? stats.high_confidence ?? (count > 0 ? count : 0);
   const modConf = metrics.moderate_confidence ?? stats.moderate_confidence ?? 0;
 
-  // Fetch contextual Wikipedia intelligence for region
+  // Fetch coordinate-based MediaWiki GeoSearch intelligence
   useEffect(() => {
     let isMounted = true;
+    const bbox = result.aoi?.bbox;
+    let cLat: number | null = null;
+    let cLon: number | null = null;
+
+    if (bbox && Array.isArray(bbox) && bbox.length === 4) {
+      cLon = (bbox[0] + bbox[2]) / 2.0;
+      cLat = (bbox[1] + bbox[3]) / 2.0;
+    }
+
     const regionToSearch = result.detected_region || result.metadata?.region_name || result.prompt || result.user_query || '';
-    if (regionToSearch) {
-      setLoadingWiki(true);
+
+    setLoadingWiki(true);
+    if (cLat !== null && cLon !== null) {
+      knowledgeService.getWikipediaGeoSearch(cLat, cLon).then((data) => {
+        if (isMounted) {
+          if (data) {
+            setWikiData(data);
+            setLoadingWiki(false);
+          } else if (regionToSearch) {
+            knowledgeService.getWikipediaSummary(regionToSearch).then((summary) => {
+              if (isMounted) {
+                setWikiData(summary);
+                setLoadingWiki(false);
+              }
+            });
+          } else {
+            setWikiData(null);
+            setLoadingWiki(false);
+          }
+        }
+      });
+    } else if (regionToSearch) {
       knowledgeService.getWikipediaSummary(regionToSearch).then((data) => {
         if (isMounted) {
           setWikiData(data);
           setLoadingWiki(false);
         }
       });
+    } else {
+      setLoadingWiki(false);
     }
+
     return () => {
       isMounted = false;
     };
-  }, [result.detected_region, result.prompt, result.user_query]);
+  }, [result.query_id, result.aoi?.bbox, result.detected_region, result.prompt]);
 
   const handleSave = () => {
     exportService.exportReport(result);
@@ -205,10 +237,18 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                 <span>Weather Context (Open-Meteo)</span>
               </div>
               <div className="text-slate-300 text-[11px] truncate">
-                {weather?.weather_condition || breakdown?.weather_evidence?.conditions || 'Partly Cloudy'}, {weather?.temperature_celsius || breakdown?.weather_evidence?.temperature_celsius || 28}°C
+                {weather?.weather_condition || breakdown?.weather_evidence?.conditions || 'Telemetry Active'}
+                {weather?.temperature_celsius !== undefined && weather?.temperature_celsius !== null ? `, ${weather.temperature_celsius}°C` : ''}
               </div>
               <div className="text-slate-400 text-[10px] flex items-center justify-between font-mono pt-0.5">
-                <span>7d Rain: {weather?.rainfall_7d_total_mm ?? breakdown?.weather_evidence?.rainfall_7d_mm ?? 12.4} mm</span>
+                <span>
+                  7d Rain:{' '}
+                  {weather?.rainfall_7d_total_mm !== undefined && weather?.rainfall_7d_total_mm !== null
+                    ? `${weather.rainfall_7d_total_mm} mm`
+                    : breakdown?.weather_evidence?.rainfall_7d_mm !== undefined && breakdown?.weather_evidence?.rainfall_7d_mm !== null
+                    ? `${breakdown.weather_evidence.rainfall_7d_mm} mm`
+                    : 'Precipitation data unavailable'}
+                </span>
                 <span className="text-emerald-400">Ambient Baseline</span>
               </div>
             </div>
@@ -235,7 +275,9 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                 <div className="p-2.5 rounded-lg bg-space-950/80 border border-slate-800/80 col-span-2 sm:col-span-1">
                   <div className="text-[10px] text-slate-400 uppercase">Avg Optical Conf</div>
                   <div className="text-lg font-bold text-amber-300 font-mono mt-0.5">
-                    {result.average_confidence ? `${(result.average_confidence * 100).toFixed(1)}%` : '93.5%'}
+                    {result.average_confidence !== undefined && result.average_confidence !== null
+                      ? `${(result.average_confidence * 100).toFixed(1)}%`
+                      : 'Not calculated'}
                   </div>
                 </div>
               </>
@@ -244,14 +286,18 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                 <div className="p-2.5 rounded-lg bg-space-950/80 border border-slate-800/80">
                   <div className="text-[10px] text-slate-400 uppercase">Water Extent</div>
                   <div className="text-lg font-bold text-cyan-300 font-mono mt-0.5">
-                    {metrics.flooded_area_km2 || '14.2'} <span className="text-xs font-normal text-slate-400">km²</span>
+                    {metrics.flooded_area_km2 !== undefined && metrics.flooded_area_km2 !== null
+                      ? `${metrics.flooded_area_km2} km²`
+                      : 'Unavailable'}
                   </div>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-space-950/80 border border-slate-800/80">
                   <div className="text-[10px] text-slate-400 uppercase">SAR Water Coverage</div>
                   <div className="text-lg font-bold text-amber-300 font-mono mt-0.5">
-                    {metrics.total_water_percentage || '15.8%'}
+                    {metrics.total_water_percentage !== undefined && metrics.total_water_percentage !== null
+                      ? `${metrics.total_water_percentage}%`
+                      : 'N/A'}
                   </div>
                 </div>
 
@@ -292,13 +338,13 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
         /* Knowledge & Gemini Descriptive Tab */
         <div className="space-y-3 font-sans animate-in fade-in duration-150">
           {/* Wikipedia Geographic Fact Card */}
-          {wikiData ? (
-            <div className="p-3 rounded-xl bg-space-950/90 border border-amber-500/30 space-y-2">
-              <div className="flex items-center justify-between">
+          {wikiData && (wikiData.extract || (wikiData.articles && wikiData.articles.length > 0)) ? (
+            <div className="p-3 rounded-xl bg-space-950/90 border border-amber-500/30 space-y-2.5">
+              <div className="flex items-center justify-between border-b border-amber-900/40 pb-1.5">
                 <div className="flex items-center gap-2">
                   <Globe className="w-4 h-4 text-amber-400" />
                   <span className="font-bold text-amber-300 text-xs uppercase font-mono">
-                    Wikipedia Geographic Intelligence: {wikiData.title}
+                    Geographic Knowledge: {wikiData.title || 'Location Context'}
                   </span>
                 </div>
                 {wikiData.source_url && (
@@ -306,9 +352,9 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                     href={wikiData.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-slate-400 hover:text-amber-300 flex items-center gap-1 font-mono"
+                    className="text-[10px] text-amber-400 hover:underline flex items-center gap-1 font-mono"
                   >
-                    <span>Wikipedia</span>
+                    <span>View Source</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -322,16 +368,49 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
                     className="w-16 h-16 rounded-lg object-cover border border-slate-700 flex-shrink-0"
                   />
                 )}
-                <p className="text-slate-300 text-xs leading-relaxed line-clamp-3">
-                  {wikiData.extract}
-                </p>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-slate-400 uppercase font-mono">Overview</div>
+                  <p className="text-slate-300 text-xs leading-relaxed font-sans">
+                    {wikiData.extract || 'Wikipedia summary available for nearby entities.'}
+                  </p>
+                </div>
+              </div>
+
+              {wikiData.articles && wikiData.articles.length > 1 && (
+                <div className="pt-1.5 border-t border-slate-800/80 space-y-1">
+                  <div className="text-[10px] text-amber-400/80 font-mono uppercase font-bold">Nearby Places & Features</div>
+                  <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                    {wikiData.articles.slice(1, 4).map((art: any, idx: number) => (
+                      <a
+                        key={idx}
+                        href={art.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-0.5 rounded bg-space-850 hover:bg-space-800 border border-slate-700 text-slate-300 hover:text-amber-300 flex items-center gap-1"
+                      >
+                        <span>{art.title}</span>
+                        {art.distance_m ? <span className="text-slate-500">({Math.round(art.distance_m)}m)</span> : null}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 font-mono border-t border-slate-800/60">
+                <span>Source: <strong className="text-slate-200">Wikipedia</strong></span>
+                <span>Retrieved: <span className="text-slate-300">{wikiData.retrieved_at ? new Date(wikiData.retrieved_at).toLocaleTimeString() : 'Real-time'}</span></span>
               </div>
             </div>
           ) : loadingWiki ? (
-            <div className="p-2 text-slate-400 text-xs italic">
-              Fetching geographic context from Wikipedia Knowledge Graph...
+            <div className="p-3 rounded-xl bg-space-950/60 border border-slate-800 text-slate-400 text-xs italic flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>Retrieving coordinate-based MediaWiki GeoSearch context...</span>
             </div>
-          ) : null}
+          ) : (
+            <div className="p-3 rounded-xl bg-space-950/60 border border-slate-800 text-slate-400 text-xs font-mono">
+              No Wikipedia geographic information found for this location.
+            </div>
+          )}
 
           {/* Descriptive Multi-Paragraph Briefing */}
           <div className="p-3 rounded-xl bg-space-950/80 border border-slate-800 space-y-2.5">
@@ -366,7 +445,14 @@ export const ResultCard: React.FC<Props> = ({ result }) => {
             </div>
             <p className="text-slate-400 text-xs">
               Natural language prompt matched <span className="text-slate-200 font-mono">{result.intent}</span> with{' '}
-              <span className="text-emerald-400 font-mono">{((result.intent_confidence ?? result.average_confidence ?? 0.94) * 100).toFixed(1)}%</span> confidence.
+              <span className="text-emerald-400 font-mono">
+                {result.intent_confidence !== undefined && result.intent_confidence !== null
+                  ? `${(result.intent_confidence * 100).toFixed(1)}%`
+                  : result.average_confidence !== undefined && result.average_confidence !== null
+                  ? `${(result.average_confidence * 100).toFixed(1)}%`
+                  : 'Not calculated'}
+              </span>{' '}
+              confidence.
             </p>
 
             <div className="font-bold text-cyan-400 font-mono text-[10px] uppercase pt-1">
