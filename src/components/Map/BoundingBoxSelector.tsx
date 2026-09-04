@@ -16,6 +16,8 @@ import {
   ChevronUp,
   GripHorizontal,
 } from 'lucide-react';
+import { useResizable } from '../../hooks';
+import { ResizeHandles } from '../Common/ResizeHandles';
 
 export const BoundingBoxSelector: React.FC = () => {
   const {
@@ -31,6 +33,16 @@ export const BoundingBoxSelector: React.FC = () => {
 
   const dragControls = useDragControls();
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const { width, height, startResize, resetSize, isResizing } = useResizable({
+    initialWidth: 320,
+    initialHeight: 'auto',
+    minWidth: 270,
+    maxWidth: 650,
+    minHeight: 200,
+    maxHeight: 700,
+    storageKey: 'satquery_aoi_box_size',
+  });
 
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
@@ -117,11 +129,17 @@ export const BoundingBoxSelector: React.FC = () => {
       dragElastic={0}
       className="absolute top-4 left-4 z-[400] select-none font-mono text-xs"
     >
-      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-72 md:w-80 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10">
+      <div
+        style={{
+          width: `${width}px`,
+          height: isOpen ? (typeof height === 'number' ? `${height}px` : height) : 'auto',
+        }}
+        className="relative bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10"
+      >
         {/* Movable Grip Header */}
         <div
           onPointerDown={(e) => dragControls.start(e)}
-          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group"
+          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group flex-shrink-0"
           title="Drag to reposition window anywhere"
         >
           <div className="flex items-center gap-2 pointer-events-none">
@@ -154,9 +172,9 @@ export const BoundingBoxSelector: React.FC = () => {
 
         {/* Content Body */}
         {isOpen && (
-          <div className="p-3 space-y-2.5">
+          <div className="p-3 space-y-2.5 flex-1 min-h-0 flex flex-col overflow-y-auto">
             {/* Live Interactive Draw Buttons */}
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5 flex-shrink-0">
               <button
                 onClick={handleStartDrawBox}
                 className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[10px] font-bold transition-all border cursor-pointer ${
@@ -184,7 +202,7 @@ export const BoundingBoxSelector: React.FC = () => {
 
             {/* Active Drawing Guide Prompt */}
             {isDrawingBBox && (
-              <div className="p-2 rounded-xl bg-cyan-950/60 border border-cyan-500/50 text-[10px] text-cyan-200 animate-pulse flex items-center gap-1.5">
+              <div className="p-2 rounded-xl bg-cyan-950/60 border border-cyan-500/50 text-[10px] text-cyan-200 animate-pulse flex items-center gap-1.5 flex-shrink-0">
                 <span className="w-2 h-2 rounded-full bg-cyan-400" />
                 <span>
                   {drawMode === 'box'
@@ -195,7 +213,7 @@ export const BoundingBoxSelector: React.FC = () => {
             )}
 
             {/* AOI Metrics & Live Area */}
-            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-space-900/80 border border-slate-800">
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-space-900/80 border border-slate-800 flex-shrink-0">
               <div className="flex items-center gap-1.5 text-slate-400 text-[10px]">
                 <MapPin className="w-3.5 h-3.5 text-cyan-400" />
                 <span>AOI Ground Footprint:</span>
@@ -205,7 +223,7 @@ export const BoundingBoxSelector: React.FC = () => {
 
             {/* Live Open-Meteo European CAMS Air Quality Telemetry Card */}
             {airQuality && (
-              <div className="p-2.5 rounded-xl bg-gradient-to-r from-space-900 to-space-850 border border-emerald-500/30 space-y-1.5">
+              <div className="p-2.5 rounded-xl bg-gradient-to-r from-space-900 to-space-850 border border-emerald-500/30 space-y-1.5 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-emerald-300 font-bold text-[10px]">
                     <Wind className="w-3.5 h-3.5 text-emerald-400" />
@@ -242,7 +260,7 @@ export const BoundingBoxSelector: React.FC = () => {
             )}
 
             {/* Action Bar */}
-            <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800">
+            <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800 flex-shrink-0">
               {isCustomDrawn && (
                 <button
                   onClick={clearDrawnAOI}
@@ -263,6 +281,16 @@ export const BoundingBoxSelector: React.FC = () => {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Resizing Edge and Corner Grips */}
+        {isOpen && (
+          <ResizeHandles
+            onStartResize={startResize}
+            onReset={resetSize}
+            containerRef={panelRef}
+            directions={['se', 'sw', 's', 'e', 'w']}
+          />
         )}
       </div>
     </motion.div>

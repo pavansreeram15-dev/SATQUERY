@@ -20,6 +20,8 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useResizable } from '../../hooks';
+import { ResizeHandles } from '../Common/ResizeHandles';
 
 export const DisasterInfoPanel: React.FC = () => {
   const {
@@ -28,6 +30,17 @@ export const DisasterInfoPanel: React.FC = () => {
     triggerSatelliteAnalysisForDisaster,
     setComparison,
   } = useMapContext();
+
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const { width, height, startResize, resetSize } = useResizable({
+    initialWidth: 384,
+    initialHeight: 'auto',
+    minWidth: 300,
+    maxWidth: 700,
+    minHeight: 250,
+    maxHeight: 750,
+    storageKey: 'satquery_disaster_panel_size',
+  });
 
   if (!selectedDisaster) return null;
 
@@ -95,14 +108,19 @@ export const DisasterInfoPanel: React.FC = () => {
 
   return (
     <motion.div
+      ref={panelRef}
       drag
       dragMomentum={false}
       dragElastic={0}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute bottom-6 right-6 z-[450] w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-space-950/98 border border-cyan-500/50 shadow-2xl backdrop-blur-2xl p-4 font-mono text-xs text-slate-200 cursor-grab active:cursor-grabbing select-none animate-in fade-in slide-in-from-bottom-4 duration-200"
+      style={{
+        width: `${width}px`,
+        height: typeof height === 'number' ? `${height}px` : height,
+      }}
+      className="absolute bottom-6 right-6 z-[450] max-w-[calc(100vw-2rem)] rounded-2xl bg-space-950/98 border border-cyan-500/50 shadow-2xl backdrop-blur-2xl p-4 font-mono text-xs text-slate-200 cursor-grab active:cursor-grabbing select-none animate-in fade-in slide-in-from-bottom-4 duration-200 flex flex-col overflow-hidden relative"
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-800 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded-lg bg-space-900 border border-slate-800 flex items-center justify-center">
             {getHazardIcon(d.type)}
@@ -137,84 +155,87 @@ export const DisasterInfoPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Title & Description */}
-      <div className="mt-2.5">
-        <h3 className="text-sm font-bold font-sans text-slate-100 leading-snug">{d.title || 'Earth Event'}</h3>
-        {d.description && (
-          <p className="mt-1.5 text-[11px] font-sans text-slate-200 leading-relaxed max-h-32 overflow-y-auto pr-1">
-            {d.description}
-          </p>
-        )}
-      </div>
-
-      {/* Quantitative Telemetry Grid */}
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-        <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
-          <div className="text-[10px] text-slate-400 uppercase font-sans">Coordinates</div>
-          <div className="text-cyan-300 font-bold font-mono mt-0.5 text-xs truncate">
-            {lat.toFixed(3)}°, {lon.toFixed(3)}°
-          </div>
+      {/* Scrollable Body Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5 mt-2">
+        {/* Title & Description */}
+        <div>
+          <h3 className="text-sm font-bold font-sans text-slate-100 leading-snug">{d.title || 'Earth Event'}</h3>
+          {d.description && (
+            <p className="mt-1.5 text-[11px] font-sans text-slate-200 leading-relaxed max-h-32 overflow-y-auto pr-1">
+              {d.description}
+            </p>
+          )}
         </div>
 
-        <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
-          <div className="text-[10px] text-slate-400 uppercase font-sans">
-            {isEarthquake ? 'Magnitude' : isWildfire ? 'Radiative Power' : d.type === 'flood' ? '24h Precipitation' : 'Hazard Level'}
-          </div>
-          <div className="text-amber-300 font-bold font-mono mt-0.5 text-xs">
-            {hasNumericMag ? (
-              `${isEarthquake ? 'M' : ''}${typeof d.magnitude === 'number' ? d.magnitude.toFixed(1) : d.magnitude} ${isWildfire ? 'MW' : d.type === 'flood' ? 'mm' : ''}`
-            ) : (
-              d.alert_level === 'red' || d.severity === 'critical' ? 'Red Alert Level' : 'Monitored Severity'
-            )}
-          </div>
-        </div>
-
-        {d.depth_km !== undefined && d.depth_km !== null && (
+        {/* Quantitative Telemetry Grid */}
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
           <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
-            <div className="text-[10px] text-slate-400 uppercase font-sans">Hypocenter Depth</div>
-            <div className="text-slate-200 font-bold font-mono mt-0.5 text-xs">
-              {typeof d.depth_km === 'number' ? d.depth_km.toFixed(1) : d.depth_km} km
+            <div className="text-[10px] text-slate-400 uppercase font-sans">Coordinates</div>
+            <div className="text-cyan-300 font-bold font-mono mt-0.5 text-xs truncate">
+              {lat.toFixed(3)}°, {lon.toFixed(3)}°
             </div>
           </div>
-        )}
 
-        <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
-          <div className="text-[10px] text-slate-400 uppercase font-sans">Confidence</div>
-          <div className="text-emerald-400 font-bold font-mono mt-0.5 text-xs">
-            {d.confidence ? `${(d.confidence * 100).toFixed(0)}%` : '95%'}
+          <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
+            <div className="text-[10px] text-slate-400 uppercase font-sans">
+              {isEarthquake ? 'Magnitude' : isWildfire ? 'Radiative Power' : d.type === 'flood' ? '24h Precipitation' : 'Hazard Level'}
+            </div>
+            <div className="text-amber-300 font-bold font-mono mt-0.5 text-xs">
+              {hasNumericMag ? (
+                `${isEarthquake ? 'M' : ''}${typeof d.magnitude === 'number' ? d.magnitude.toFixed(1) : d.magnitude} ${isWildfire ? 'MW' : d.type === 'flood' ? 'mm' : ''}`
+              ) : (
+                d.alert_level === 'red' || d.severity === 'critical' ? 'Red Alert Level' : 'Monitored Severity'
+              )}
+            </div>
           </div>
+
+          {d.depth_km !== undefined && d.depth_km !== null && (
+            <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
+              <div className="text-[10px] text-slate-400 uppercase font-sans">Hypocenter Depth</div>
+              <div className="text-slate-200 font-bold font-mono mt-0.5 text-xs">
+                {typeof d.depth_km === 'number' ? d.depth_km.toFixed(1) : d.depth_km} km
+              </div>
+            </div>
+          )}
+
+          <div className="p-2 rounded-xl bg-space-900/80 border border-slate-800">
+            <div className="text-[10px] text-slate-400 uppercase font-sans">Confidence</div>
+            <div className="text-emerald-400 font-bold font-mono mt-0.5 text-xs">
+              {d.confidence ? `${(d.confidence * 100).toFixed(0)}%` : '95%'}
+            </div>
+          </div>
+
+          {d.start_time && (
+            <div className="col-span-2 p-2 rounded-xl bg-space-900/80 border border-slate-800 flex items-center justify-between">
+              <div className="text-[10px] text-slate-400 uppercase font-sans flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Event Started</span>
+              </div>
+              <div className="text-cyan-300 font-bold font-mono text-xs">
+                {new Date(d.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(d.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {d.start_time && (
-          <div className="col-span-2 p-2 rounded-xl bg-space-900/80 border border-slate-800 flex items-center justify-between">
-            <div className="text-[10px] text-slate-400 uppercase font-sans flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Event Started</span>
-            </div>
-            <div className="text-cyan-300 font-bold font-mono text-xs">
-              {new Date(d.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(d.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </div>
+        {/* Multi-Source Attribution Badges */}
+        <div className="p-2 rounded-xl bg-space-900/60 border border-slate-800/80 flex items-center justify-between text-[10px]">
+          <span className="text-slate-400">Reporting Sources:</span>
+          <div className="flex items-center gap-1">
+            {(d.sources && d.sources.length > 0 ? d.sources : [d.source || 'USGS']).map((src) => (
+              <span
+                key={src}
+                className="px-1.5 py-0.5 rounded bg-space-850 border border-cyan-500/30 text-cyan-300 font-bold font-mono"
+              >
+                {src}
+              </span>
+            ))}
           </div>
-        )}
-      </div>
-
-      {/* Multi-Source Attribution Badges */}
-      <div className="mt-2.5 p-2 rounded-xl bg-space-900/60 border border-slate-800/80 flex items-center justify-between text-[10px]">
-        <span className="text-slate-400">Reporting Sources:</span>
-        <div className="flex items-center gap-1">
-          {(d.sources && d.sources.length > 0 ? d.sources : [d.source || 'USGS']).map((src) => (
-            <span
-              key={src}
-              className="px-1.5 py-0.5 rounded bg-space-850 border border-cyan-500/30 text-cyan-300 font-bold font-mono"
-            >
-              {src}
-            </span>
-          ))}
         </div>
       </div>
 
       {/* Sentinel Hub & Action Buttons */}
-      <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-col gap-2">
+      <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-col gap-2 flex-shrink-0">
         <button
           onClick={handleStartAnalysis}
           className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs transition-all shadow-lg shadow-cyan-600/25"
@@ -245,6 +266,14 @@ export const DisasterInfoPanel: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Resizing Edge and Corner Grips */}
+      <ResizeHandles
+        onStartResize={startResize}
+        onReset={resetSize}
+        containerRef={panelRef}
+        directions={['se', 'sw', 's', 'e', 'w']}
+      />
     </motion.div>
   );
 };

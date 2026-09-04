@@ -19,12 +19,24 @@ import {
   Globe,
   Radio,
 } from 'lucide-react';
+import { useResizable } from '../../hooks';
+import { ResizeHandles } from '../Common/ResizeHandles';
 
 export const MaritimeControlBar: React.FC = () => {
   const map = useMap();
   const { layers, toggleLayer, setViewportBBox, setDrawnBBox, setQueryResult } = useMapContext();
   const dragControls = useDragControls();
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const { width, height, startResize, resetSize, isResizing } = useResizable({
+    initialWidth: 384,
+    initialHeight: 420,
+    minWidth: 280,
+    maxWidth: 750,
+    minHeight: 220,
+    maxHeight: 750,
+    storageKey: 'satquery_maritime_panel_size',
+  });
 
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'ports' | 'cables'>('ports');
@@ -127,11 +139,17 @@ export const MaritimeControlBar: React.FC = () => {
       dragElastic={0}
       className="absolute bottom-6 left-6 z-[450] select-none font-mono text-xs"
     >
-      <div className="bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 w-80 md:w-96 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10">
+      <div
+        style={{
+          width: `${width}px`,
+          height: isMinimized ? 'auto' : typeof height === 'number' ? `${height}px` : height,
+        }}
+        className="relative bg-space-950/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl text-slate-100 overflow-hidden flex flex-col transition-shadow hover:shadow-cyan-500/10"
+      >
         {/* Movable Grip Header */}
         <div
           onPointerDown={(e) => dragControls.start(e)}
-          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group"
+          className="px-3.5 py-2.5 bg-space-900/95 border-b border-slate-800/80 flex items-center justify-between cursor-grab active:cursor-grabbing hover:bg-space-850 transition-colors select-none group flex-shrink-0"
           title="Drag to reposition window anywhere"
         >
           <div className="flex items-center gap-2 pointer-events-none">
@@ -159,9 +177,9 @@ export const MaritimeControlBar: React.FC = () => {
 
         {/* Panel Content (Visible when not minimized) */}
         {!isMinimized && (
-          <div className="p-3 space-y-2.5">
+          <div className="p-3 space-y-2.5 flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Quick Layer Controls Bar */}
-            <div className="flex items-center justify-between gap-1 p-1 bg-space-900/60 border border-slate-800 rounded-xl text-[10px]">
+            <div className="flex items-center justify-between gap-1 p-1 bg-space-900/60 border border-slate-800 rounded-xl text-[10px] flex-shrink-0">
               <button
                 onClick={() => toggleLayer('maritimeInfrastructure')}
                 className={`flex-1 py-1 px-1.5 rounded-lg flex items-center justify-center gap-1 font-semibold transition-all ${
@@ -203,7 +221,7 @@ export const MaritimeControlBar: React.FC = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center border-b border-slate-800 gap-3 pb-1 text-[11px]">
+            <div className="flex items-center border-b border-slate-800 gap-3 pb-1 text-[11px] flex-shrink-0">
               <button
                 onClick={() => setActiveTab('ports')}
                 className={`font-bold transition-colors pb-0.5 ${
@@ -227,7 +245,7 @@ export const MaritimeControlBar: React.FC = () => {
             </div>
 
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-cyan-400 pointer-events-none" />
               <input
                 type="text"
@@ -244,7 +262,7 @@ export const MaritimeControlBar: React.FC = () => {
 
             {/* List Body */}
             {activeTab === 'ports' ? (
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-1">
                 {filteredPorts.map((port) => {
                   const isSelected = selectedPort?.id === port.id;
                   return (
@@ -284,7 +302,7 @@ export const MaritimeControlBar: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-1">
                 {filteredCables.map((cable) => {
                   const p = cable.properties;
                   const isSelected = selectedCable?.id === cable.id;
@@ -326,6 +344,16 @@ export const MaritimeControlBar: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Resizing Edge and Corner Grips */}
+        {!isMinimized && (
+          <ResizeHandles
+            onStartResize={startResize}
+            onReset={resetSize}
+            containerRef={panelRef}
+            directions={['se', 'sw', 's', 'e', 'w']}
+          />
         )}
       </div>
     </motion.div>

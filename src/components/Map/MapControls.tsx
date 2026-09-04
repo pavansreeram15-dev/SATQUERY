@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useMapContext } from '../../context/MapContext';
 import { usePersona } from '../../context/PersonaContext';
 import { BASEMAP_TILES, BHUVAN_LAYERS_CONFIG } from '../../config/mapConfig';
@@ -9,6 +9,8 @@ import {
   RotateCcw,
   Sliders,
 } from 'lucide-react';
+import { useResizable } from '../../hooks';
+import { ResizeHandles } from '../Common/ResizeHandles';
 
 export const MapControls: React.FC = () => {
   const {
@@ -23,8 +25,31 @@ export const MapControls: React.FC = () => {
   } = useMapContext();
 
   const { persona } = usePersona();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const { width, height, startResize, resetSize, isResizing } = useResizable({
+    initialWidth: 320,
+    initialHeight: 440,
+    minWidth: 260,
+    maxWidth: 650,
+    minHeight: 200,
+    maxHeight: 800,
+    storageKey: 'satquery_mapcontrols_panel_size',
+  });
+
   const [panelOpen, setPanelOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'layers' | 'basemap'>('layers');
+
+  useEffect(() => {
+    if (panelRef.current) {
+      import('leaflet').then((L) => {
+        if (panelRef.current) {
+          L.DomEvent.disableClickPropagation(panelRef.current);
+          L.DomEvent.disableScrollPropagation(panelRef.current);
+        }
+      });
+    }
+  }, [panelOpen]);
 
   const basemaps: BasemapType[] = ['dark', 'satellite', 'street', 'topo'];
 
@@ -79,8 +104,15 @@ export const MapControls: React.FC = () => {
 
       {/* Expanded Layers & Basemaps Panel */}
       {panelOpen && (
-        <div className="w-80 bg-space-950/95 border border-slate-700/80 rounded-xl shadow-2xl backdrop-blur-xl p-3 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div
+          ref={panelRef}
+          style={{
+            width: `${width}px`,
+            height: typeof height === 'number' ? `${height}px` : height,
+          }}
+          className="relative bg-space-950/95 border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-xl p-3 text-slate-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col overflow-hidden"
+        >
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800 flex-shrink-0">
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('layers')}
@@ -107,7 +139,7 @@ export const MapControls: React.FC = () => {
           </div>
 
           {activeTab === 'layers' ? (
-            <div className="pt-2.5 space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div className="pt-2.5 space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
               <div className="text-[10px] font-bold uppercase text-slate-500">Live Earth & AI Overlays</div>
 
               <LayerToggleItem
@@ -196,7 +228,7 @@ export const MapControls: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="pt-2.5 space-y-1.5">
+            <div className="pt-2.5 space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-1">
               {basemaps.map((bKey) => {
                 const bInfo = BASEMAP_TILES[bKey];
                 const isSelected = layers.basemap === bKey;
@@ -218,6 +250,14 @@ export const MapControls: React.FC = () => {
               })}
             </div>
           )}
+
+          {/* Resizing Edge and Corner Grips */}
+          <ResizeHandles
+            onStartResize={startResize}
+            onReset={resetSize}
+            containerRef={panelRef}
+            directions={['sw', 'w', 's', 'se', 'e']}
+          />
         </div>
       )}
     </div>
