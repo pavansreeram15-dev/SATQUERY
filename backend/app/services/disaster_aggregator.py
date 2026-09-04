@@ -7,7 +7,8 @@ from .disaster_providers import (
     USGSDisasterProvider,
     EONETDisasterProvider,
     FIRMSDisasterProvider,
-    GDACSDisasterProvider
+    GDACSDisasterProvider,
+    IMDDisasterProvider
 )
 from ..schemas.disaster_schemas import (
     EarthEvent,
@@ -34,7 +35,7 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 class DisasterAggregatorService:
     """
     Central Disaster Aggregator & Deduplication Subsystem.
-    Orchestrates live feeds across USGS, NASA EONET, NASA FIRMS, and GDACS.
+    Orchestrates live feeds across USGS, NASA EONET, NASA FIRMS, GDACS, and IMD.
     """
 
     def __init__(self):
@@ -42,8 +43,9 @@ class DisasterAggregatorService:
         self.eonet = EONETDisasterProvider()
         self.firms = FIRMSDisasterProvider()
         self.gdacs = GDACSDisasterProvider()
+        self.imd = IMDDisasterProvider()
         
-        self.providers = [self.usgs, self.eonet, self.firms, self.gdacs]
+        self.providers = [self.usgs, self.eonet, self.firms, self.gdacs, self.imd]
         
         self._cached_events: List[EarthEvent] = []
         self._cache_timestamp: Optional[datetime] = None
@@ -73,7 +75,8 @@ class DisasterAggregatorService:
             self.usgs.fetch_events(time_range=time_range, limit=limit),
             self.eonet.fetch_events(time_range=time_range, limit=limit),
             self.firms.fetch_events(time_range=time_range, limit=limit),
-            self.gdacs.fetch_events(time_range=time_range, limit=limit)
+            self.gdacs.fetch_events(time_range=time_range, limit=limit),
+            self.imd.fetch_events(time_range=time_range, limit=limit)
         ]
         
         results = await asyncio.gather(*tasks, return_exceptions=True)

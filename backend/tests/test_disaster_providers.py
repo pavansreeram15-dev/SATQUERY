@@ -13,6 +13,7 @@ from backend.app.services.disaster_providers.usgs_provider import USGSDisasterPr
 from backend.app.services.disaster_providers.eonet_provider import EONETDisasterProvider
 from backend.app.services.disaster_providers.firms_provider import FIRMSDisasterProvider
 from backend.app.services.disaster_providers.gdacs_provider import GDACSDisasterProvider
+from backend.app.services.disaster_providers.imd_provider import IMDDisasterProvider
 from backend.app.services.disaster_aggregator import DisasterAggregatorService, haversine_km
 
 class TestDisasterProviders(unittest.IsolatedAsyncioTestCase):
@@ -311,6 +312,20 @@ class TestDisasterProviders(unittest.IsolatedAsyncioTestCase):
         # 7 Days filter -> all 3 events
         res_7d = aggregator._apply_filters(all_evs, time_range="7d")
         self.assertEqual(len(res_7d), 3)
+
+    async def test_imd_provider_monsoon_parsing(self):
+        """Test IMD Live Monsoon Heavy Rainfall and Cloudburst flood alerts."""
+        provider = IMDDisasterProvider()
+        events = await provider.fetch_events(time_range="24h")
+        self.assertGreater(len(events), 0)
+        
+        # Verify Kerala Wayanad / Periyar flood warnings
+        kerala_events = [e for e in events if "Kerala" in (e.region or "") or "Wayanad" in e.title]
+        self.assertGreater(len(kerala_events), 0)
+        ke = kerala_events[0]
+        self.assertEqual(ke.source, "IMD")
+        self.assertEqual(ke.type, DisasterType.FLOOD)
+        self.assertIn("IMD", ke.sources)
 
 if __name__ == "__main__":
     unittest.main()
