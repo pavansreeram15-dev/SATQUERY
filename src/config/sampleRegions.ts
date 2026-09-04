@@ -87,6 +87,18 @@ export const SAMPLE_REGIONS: SampleRegion[] = [
     satelliteName: 'Sentinel-2 Optical & SAR',
   },
   {
+    id: 'kerala-monsoon',
+    name: 'Kerala Flood & Landslide Zone',
+    category: 'Disaster',
+    center: [11.6050, 76.1320],
+    zoom: 12,
+    bbox: [76.0500, 11.5200, 76.2200, 11.6900],
+    description: 'Wayanad, Western Ghats catchment and extreme southwest monsoon inundation corridors.',
+    defaultPrompt: 'Analyze flood inundation and landslide risk with Sentinel-1 SAR',
+    recommendedPersona: 'NDRF_OFFICER',
+    satelliteName: 'Sentinel-1 SAR Dual-Pol (Cloud-Penetrating)',
+  },
+  {
     id: 'delhi-urban',
     name: 'Delhi Urban Region',
     category: 'Urban',

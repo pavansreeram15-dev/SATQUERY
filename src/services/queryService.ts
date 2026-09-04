@@ -762,6 +762,11 @@ async function createClientFallbackResponse(request: QueryRequest): Promise<Quer
       promptLower.includes('assam') ||
       promptLower.includes('nepal') ||
       promptLower.includes('kathmandu') ||
+      promptLower.includes('kerala') ||
+      promptLower.includes('wayanad') ||
+      promptLower.includes('idukki') ||
+      promptLower.includes('kochi') ||
+      promptLower.includes('periyar') ||
       promptLower.includes('bagmati') ||
       promptLower.includes('koshi') ||
       promptLower.includes('brahmaputra') ||
@@ -771,6 +776,10 @@ async function createClientFallbackResponse(request: QueryRequest): Promise<Quer
       locationName.toLowerCase().includes('guwahati') ||
       locationName.toLowerCase().includes('nepal') ||
       locationName.toLowerCase().includes('kathmandu') ||
+      locationName.toLowerCase().includes('kerala') ||
+      locationName.toLowerCase().includes('wayanad') ||
+      locationName.toLowerCase().includes('idukki') ||
+      locationName.toLowerCase().includes('kochi') ||
       (promptLower.includes('flood') && (rain7d > 40 || promptLower.includes('inundat') || promptLower.includes('overflow')))
     );
     
