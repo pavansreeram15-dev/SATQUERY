@@ -466,6 +466,7 @@ export const disasterService = {
           { provider_name: 'NASA EONET', status: 'OPERATIONAL', event_count: 12, poll_interval_seconds: 300, requires_api_key: false, is_authenticated: true },
           { provider_name: 'NASA FIRMS', status: 'OPERATIONAL', event_count: 8, poll_interval_seconds: 600, requires_api_key: true, is_authenticated: true },
           { provider_name: 'GDACS', status: 'OPERATIONAL', event_count: 7, poll_interval_seconds: 300, requires_api_key: false, is_authenticated: true },
+          { provider_name: 'IMD', status: 'OPERATIONAL', event_count: 6, poll_interval_seconds: 300, requires_api_key: false, is_authenticated: true },
         ],
         last_updated: new Date().toISOString(),
       };

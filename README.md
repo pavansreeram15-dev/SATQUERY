@@ -21,33 +21,35 @@
 
 **SATQUERY AI** is an agentic, production-grade geospatial intelligence platform designed for **ISRO mission analysts**, **NDRF disaster response commanders**, and **public environmental researchers**. Instead of forcing operators to manually navigate complicated desktop GIS software, download gigabyte-scale satellite rasters, or hand-craft spectral band math scripts, SATQUERY AI translates natural English questions and custom drawn survey regions directly into verified remote sensing pipelines:
 
-$$\text{User Query / AOI} \longrightarrow \text{Intent & Entity Parser} \longrightarrow \text{Server RBAC Gate} \longrightarrow \text{Multi-Source Router} \longrightarrow \text{Weather & Satellite Fusion} \longrightarrow \text{Evidence Report} \longrightarrow \text{Interactive Map} \longrightarrow \text{Audit Log}$$
+$$\text{User Query / AOI} \longrightarrow \text{Intent & Entity Parser} \longrightarrow \text{Server RBAC Gate} \longrightarrow \text{Multi-Source Router} \longrightarrow \text{Weather & Satellite Fusion} \longrightarrow \text{Evidence Report} \longrightarrow \text{Interactive Map}$$
 
 ### Key Platform Features:
-1. **Interactive Draw Region (AOI) Tool**:
+1. **Interactive Draw Region (AOI) Tool & Resizable Panels**:
    - **🔲 Draw Box (Rectangle)**: Click any two opposite corners on the map to define an exact rectangular Area of Interest.
    - **⬟ Draw Polygon**: Click sequential vertices on the map to draw custom multi-point polygonal survey areas with real-time ground area calculation ($km^2$).
-   - **Movable & Draggable Panel**: Easily reposition the drawing window anywhere across the screen.
-2. **European Copernicus (CAMS) Air Quality API**:
+   - **Movable & Multi-Directional Resizable Windows**: Drag or resize panels (`Maritime & Gigawatt Map`, `Draw Region & AOI`, `Intelligence Layers`, and `Disaster Intel Cards`) from corners and edges with glowing HUD cyan grips (`///`).
+2. **India Meteorological Department (IMD) & ISRO MOSDAC Telemetry**:
+   - Live automated monitoring of extreme Indian monsoon downpours, cloudburst warnings ($\ge 115.6\text{ mm}$ Orange Alert / $\ge 204.4\text{ mm}$ Red Alert), and landslide/flood alerts across Kerala (Wayanad, Idukki, Periyar), Assam (Brahmaputra), Maharashtra (Konkan), and Odisha.
+3. **European Copernicus (CAMS) Air Quality API**:
    - Live atmospheric telemetry: **European AQI, PM2.5, PM10, $\text{NO}_2$, $\text{SO}_2$, $\text{O}_3$, $\text{CO}$, Dust Optical Depth, and UV Index**.
-3. **GeoNames Global Gazetteer & ASTER GDEM Elevation API**:
+4. **GeoNames Global Gazetteer & ASTER GDEM Elevation API**:
    - 25M+ worldwide place names, administrative regions, spatial reverse geocoding, and exact digital elevation profiles.
-4. **Maritime & Gigawatt Infrastructure Intelligence**:
+5. **Maritime & Gigawatt Infrastructure Intelligence**:
    - **Global Seaports & Terminals**: UN/LOCODE container hubs, berth counts, and annual TEU throughput.
    - **Submarine Fiber-Optic Cables**: Global gigawatt routes, landing stations, and Tbps transmission capacity.
    - **Live AIS Fleet Tracking**: Real-time commercial vessel positions, speed (SOG), heading (COG), and vessel type.
    - **Movable Window**: Physics-based drag-and-drop panel with Leaflet event isolation.
-5. **Before vs After Satellite Comparison**:
+6. **Before vs After Satellite Comparison**:
    - Synchronized bi-temporal split slider (`< BEFORE --------|-------- AFTER >`) and side-by-side mode across **Sentinel-2 Optical (10m)**, **Sentinel-1 C-SAR (10m)**, and **Landsat 8/9 (30m)**.
-6. **Smart Temporal Presets & Sensor Schedules**:
+7. **Smart Temporal Presets & Sensor Schedules**:
    - Quick temporal jumps (`7D`, `30D`, `3M`, `6M`, `1Y`, `CUSTOM`) calibrated to satellite constellation revisit intervals (~5 days for Sentinel-2, ~6-12 days for Sentinel-1 SAR).
-7. **Multi-Tier Global Location Search**:
+8. **Multi-Tier Global Location Search**:
    - Multi-tier search cascading across Local Backend Nominatim, GeoNames, Direct OSM, Built-in Global Gazetteer, and GPS coordinates.
-8. **Evidence-First Results & Resizable AI Assistant**:
+9. **Evidence-First Results & Resizable AI Assistant**:
    - **Executive Conclusion**, **Satellite Evidence**, **Weather Context**, **Quantitative Metrics** ($km^2$, water coverage %, confidence %), **Limitations**, and **"Why am I seeing this result?"** reasoning.
    - **Smooth Resizable Splitter**: Expand/shrink the AI Assistant drawer from 320px to 950px with double-click width presets.
-9. **Multi-Source Provider Health Telemetry**:
-   - Live diagnostic monitoring across all 13 satellite, meteorological, maritime, atmospheric, and disaster data providers.
+10. **Multi-Source Provider Health Telemetry**:
+    - Live diagnostic monitoring across all 15 satellite, meteorological, maritime, atmospheric, and disaster data providers.
 
 ---
 
@@ -102,12 +104,13 @@ graph TD
 
 ## 📡 3. Truthful Data Sources & Multi-Source Providers Matrix
 
-SATQUERY AI connects to **13 public and specialized Earth Observation, atmospheric, maritime, and environmental providers**:
+SATQUERY AI connects to **15 public and specialized Earth Observation, atmospheric, maritime, meteorological, and disaster providers**:
 
 | Provider | Purpose | Authentication / Requirements | Status |
 | :--- | :--- | :--- | :--- |
 | **Microsoft Planetary Computer** | Public STAC search for Sentinel-2, Sentinel-1, Landsat 8/9 | **Keyless / Completely Free** (Public STAC API) | 🟢 Operational |
 | **Copernicus Data Space (CDSE)** | Sentinel-2 L2A optical reflectance & Sentinel-1 SAR | **OAuth2 Client ID/Secret** (`SENTINELHUB_CLIENT_ID`) | 🟢 Operational |
+| **India Meteorological Dept (IMD) & ISRO MOSDAC** | Real-time Indian monsoon radar, cloudburst red alerts, heavy rainfall | **Keyless / Public REST & Open-Meteo Grid** | 🟢 Operational |
 | **European Copernicus (CAMS)** | Real-time AQI, PM2.5, PM10, $\text{NO}_2$, $\text{SO}_2$, $\text{O}_3$, CO, Dust, UV | **Keyless / Completely Free** (Open-Meteo CAMS) | 🟢 Operational |
 | **Open-Meteo Weather API** | 7-Day rainfall history, ambient temperature, humidity, wind | **Keyless / Completely Free** (Public REST API) | 🟢 Operational |
 | **GeoNames Global Gazetteer** | 25M+ worldwide places, nearby reverse geocoding, ASTER GDEM | **Keyless / Free Tier** (`GEONAMES_USERNAME`) | 🟢 Operational |
@@ -118,6 +121,7 @@ SATQUERY AI connects to **13 public and specialized Earth Observation, atmospher
 | **USGS Earthquake Hazards** | Global seismic events, Richter magnitude, hypocenter depth | **Keyless / Completely Free** (Public GeoJSON Feed) | 🟢 Operational |
 | **NASA EONET** | Wildfires, volcanic eruptions, tropical cyclones, storms | **Keyless / Completely Free** (Public REST API) | 🟢 Operational |
 | **NASA FIRMS** | Active wildfire thermal anomalies from VIIRS / MODIS | **Keyless / Free REST API** | 🟢 Operational |
+| **GDACS (UN / EC)** | Global Disaster Alert & Coordination multi-hazard bulletins | **Keyless / Completely Free** (Public REST / RSS) | 🟢 Operational |
 | **ISRO Bhuvan (NRSC)** | LULC 50K, Wasteland Atlas, Geomorphology, Flood Hazard | **Keyless Public WMS** (Optional `BHUVAN_API_KEY`) | 🟢 Operational |
 
 ---
@@ -129,7 +133,7 @@ SATQUERY AI enforces server-authoritative role-based access control across all a
 | Persona | Clearance Level | Allowed Workflows | Blocked Workflows | Max Export Level |
 | :--- | :--- | :--- | :--- | :--- |
 | **ISRO / SPACE ANALYST** | **Full Operational Clearance** | Object Detection, Ship/Tank Counting, SAR Radar Analysis, Flood Inundation, Change Detection, NDVI, NDWI, Bhuvan Thematic | *None* | **OPERATIONAL** (GeoJSON, CSV, JSON, GeoTIFF) |
-| **NDRF / DISASTER OFFICER** | **Disaster & Emergency Clearance** | Flood Detection, Water Extent (NDWI), Disaster Impact Summaries, Multi-temporal Change, Bhuvan Flood Hazard | Strategic Infrastructure Detection (Fuel Silos, Strategic Ships) | **OPERATIONAL** (GeoJSON, CSV, Disaster Report) |
+| **NDRF / DISASTER OFFICER** | **Disaster & Emergency Clearance** | Flood Detection, Water Extent (NDWI), Disaster Impact Summaries, Multi-temporal Change, Bhuvan Flood Hazard, IMD Alerts | Strategic Infrastructure Detection (Fuel Silos, Strategic Ships) | **OPERATIONAL** (GeoJSON, CSV, Disaster Report) |
 | **PUBLIC / RESEARCH USER** | **Open Research Clearance** | Sentinel-2 Visual Reflectance, Vegetation Health (NDVI), Water Index (NDWI), Land Cover Change, Bhuvan Wastelands | Tactical Object Detection, Silo Detection, Raw SAR Radar Operations | **PUBLIC** (GeoJSON, CSV, JSON) |
 
 ---
@@ -155,11 +159,14 @@ Live and 7-day cumulative rainfall telemetry from Open-Meteo.
 ### 5. `GET /api/maritime/ports`, `/api/maritime/cables`, `/api/ais/vessels`
 Global seaport terminals, submarine fiber-optic cable routes, and live commercial AIS vessel positions.
 
-### 6. `POST /api/query`
+### 6. `GET /api/disasters` & `/api/disasters/summary`
+Normalized multi-source natural disaster feed aggregating USGS, NASA EONET, NASA FIRMS, GDACS, and IMD.
+
+### 7. `POST /api/query`
 Main natural language geospatial query execution pipeline fusing intent, RBAC, satellite processing, environmental weather evidence, and knowledge graphs.
 
-### 7. `GET /api/providers/health`
-Returns real-time connection status across all 13 data & intelligence providers.
+### 8. `GET /api/providers/health`
+Returns real-time connection status across all 15 data & intelligence providers.
 
 ---
 

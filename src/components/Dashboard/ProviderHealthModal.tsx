@@ -62,6 +62,9 @@ export const ProviderHealthModal: React.FC = () => {
     if (n.includes('firms') || n.includes('fire')) {
       return <Flame className="w-4 h-4 text-orange-400" />;
     }
+    if (n.includes('imd') || n.includes('mosdac')) {
+      return <CloudSun className="w-4 h-4 text-cyan-300" />;
+    }
     if (n.includes('eonet') || n.includes('usgs') || n.includes('gdacs')) {
       return <Radio className="w-4 h-4 text-red-400" />;
     }

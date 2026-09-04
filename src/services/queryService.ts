@@ -346,6 +346,15 @@ export const queryService = {
           is_configured: true,
           last_checked: nowIso,
           latency_ms: 85
+        },
+        {
+          provider_name: 'IMD & ISRO MOSDAC',
+          display_name: 'India Meteorological Dept & ISRO MOSDAC (Monsoon Radar & Floods)',
+          status: 'OPERATIONAL',
+          auth_type: 'KEYLESS_REST',
+          is_configured: true,
+          last_checked: nowIso,
+          latency_ms: 105
         }
       ];
     }
