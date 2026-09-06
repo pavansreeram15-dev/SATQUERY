@@ -14,6 +14,7 @@ export const SubmarineCablesLayer: React.FC = () => {
   const [hoveredCableId, setHoveredCableId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!layers?.submarineCables) return;
     let isMounted = true;
     Promise.all([cableApi.getCables(), cableApi.getLandingPoints()]).then(
       ([cablesRes, lpRes]) => {
@@ -26,7 +27,7 @@ export const SubmarineCablesLayer: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [layers?.submarineCables]);
 
   if (!layers?.submarineCables) return null;
 

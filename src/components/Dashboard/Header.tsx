@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PersonaSwitcher } from '../Persona/PersonaSwitcher';
 import { PersonaBadge } from '../Persona/PersonaBadge';
@@ -6,6 +6,7 @@ import { RegionSelector } from './RegionSelector';
 import { LocationSearchBar } from './LocationSearchBar';
 import { AuditTrailDrawer } from './AuditTrailDrawer';
 import { ProviderHealthModal } from './ProviderHealthModal';
+import { RSVLMStudio } from '../AI/RSVLMStudio';
 import { useAuth } from '../../context/AuthContext';
 import { useMapContext } from '../../context/MapContext';
 import {
@@ -19,7 +20,9 @@ import {
   User,
   Shield,
   Layers,
-  Radio
+  Radio,
+  Crosshair,
+  Sparkles
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -27,6 +30,21 @@ export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { setProviderHealthModalOpen } = useMapContext();
   const [auditOpen, setAuditOpen] = useState<boolean>(false);
+  const [vlmStudioOpen, setVlmStudioOpen] = useState<boolean>(false);
+  const [vlmInitialMode, setVlmInitialMode] = useState<'SINGLE_VQA' | 'BITEMPORAL_CHANGE' | 'OPTICAL_SAR_FUSION'>('OPTICAL_SAR_FUSION');
+  const [vlmInitialPreset, setVlmInitialPreset] = useState<string>('isro-cartosat-risat');
+
+  // Custom global event listener to open VLM Studio from AssistantPanel or quick prompts
+  useEffect(() => {
+    const handleOpenVLMStudio = (e: any) => {
+      if (e.detail?.mode) setVlmInitialMode(e.detail.mode);
+      if (e.detail?.presetId) setVlmInitialPreset(e.detail.presetId);
+      setVlmStudioOpen(true);
+    };
+
+    window.addEventListener('satquery:open-vlm-studio', handleOpenVLMStudio);
+    return () => window.removeEventListener('satquery:open-vlm-studio', handleOpenVLMStudio);
+  }, []);
 
   const navLinks = [
     { label: 'Mission Dashboard', path: '/dashboard', icon: Compass },
@@ -83,8 +101,22 @@ export const Header: React.FC = () => {
           <RegionSelector />
         </div>
 
-        {/* Right: Data Health, Persona Switcher, Audit Trail, User Session */}
-        <div className="flex items-center gap-2.5">
+        {/* Right: ISRO VLM Studio Trigger, Data Health, Persona Switcher, Audit Trail, User Session */}
+        <div className="flex items-center gap-2">
+          {/* ISRO VLM Studio Primary Trigger Button */}
+          <button
+            onClick={() => setVlmStudioOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-900/90 via-cyan-900/90 to-blue-900/90 hover:from-indigo-800 hover:to-cyan-800 border border-cyan-400/60 text-cyan-300 hover:text-white transition-all font-mono text-xs font-bold shadow-lg shadow-cyan-500/20 group relative overflow-hidden"
+            title="Launch ISRO Remote Sensing Vision-Language Model Studio"
+          >
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+            </span>
+            <Crosshair className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-90 transition-transform duration-300" />
+            <span className="font-extrabold tracking-wide">🛰️ ISRO VLM Studio</span>
+          </button>
+
           <button
             onClick={() => setProviderHealthModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-space-900 hover:bg-space-850 border border-slate-700/80 text-emerald-400 hover:text-emerald-300 transition-all font-mono text-xs"
@@ -121,6 +153,14 @@ export const Header: React.FC = () => {
           )}
         </div>
       </header>
+
+      {/* ISRO RS-VLM Studio Modal */}
+      <RSVLMStudio
+        isOpen={vlmStudioOpen}
+        onClose={() => setVlmStudioOpen(false)}
+        initialMode={vlmInitialMode}
+        initialPresetId={vlmInitialPreset}
+      />
 
       {/* Audit Drawer Component */}
       <AuditTrailDrawer isOpen={auditOpen} onClose={() => setAuditOpen(false)} />

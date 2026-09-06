@@ -86,6 +86,7 @@ export const MaritimeInfrastructureLayer: React.FC = () => {
   const [selectedPortId, setSelectedPortId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!layers?.maritimeInfrastructure) return;
     let isMounted = true;
     maritimeApi.getPorts().then((res) => {
       if (isMounted && res?.features?.length > 0) {
@@ -95,7 +96,7 @@ export const MaritimeInfrastructureLayer: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [layers?.maritimeInfrastructure]);
 
   const handleInspectWithSatellite = useCallback(
     (port: MaritimePort) => {

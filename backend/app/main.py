@@ -34,12 +34,8 @@ app.include_router(api_router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize background disaster telemetry polling & live AISStream connection."""
-    import asyncio
-    from .services.disaster_scheduler import disaster_broadcaster
-    from .services.ais_service import ais_service
-    asyncio.create_task(disaster_broadcaster.start_background_poller())
-    ais_service.ensure_started()
+    """Fast lightweight startup without idle background polling loops."""
+    pass
 
 @app.get("/")
 async def root():

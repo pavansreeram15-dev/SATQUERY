@@ -180,13 +180,15 @@ export const LiveDisastersLayer: React.FC = () => {
       }
     };
 
-    loadDisasters();
+    if (layers?.liveDisasters) {
+      loadDisasters();
+    }
 
     const pollInterval = setInterval(() => {
       if (isMounted && layers?.liveDisasters) {
         loadDisasters();
       }
-    }, 60000);
+    }, 120000);
 
     return () => {
       isMounted = false;

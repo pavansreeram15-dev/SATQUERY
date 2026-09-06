@@ -7,7 +7,7 @@ import { QueryInput } from './QueryInput';
 import { QuickPrompts } from './QuickPrompts';
 import { AnalysisLoader } from './AnalysisLoader';
 import { PersonaBadge } from '../Persona/PersonaBadge';
-import { Bot, Sparkles, Terminal, Trash2, ShieldCheck, CornerDownRight } from 'lucide-react';
+import { Bot, Sparkles, Terminal, Trash2, ShieldCheck, CornerDownRight, Crosshair, ArrowRight } from 'lucide-react';
 
 export const AssistantPanel: React.FC = () => {
   const { persona } = usePersona();
@@ -102,6 +102,14 @@ export const AssistantPanel: React.FC = () => {
     setQueryResult(null);
   };
 
+  const openVLMStudio = (mode: string, presetId: string) => {
+    window.dispatchEvent(
+      new CustomEvent('satquery:open-vlm-studio', {
+        detail: { mode, presetId },
+      })
+    );
+  };
+
   const lastMessage = messages[messages.length - 1];
   const hasResult = lastMessage?.result;
 
@@ -136,10 +144,37 @@ export const AssistantPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* ISRO RS-VLM Studio Promotion Banner */}
+      <div className="mx-3 mt-3 p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/90 via-space-900 to-cyan-950/90 border border-cyan-500/40 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-cyan-950 border border-cyan-500/50 flex items-center justify-center text-cyan-300 flex-shrink-0">
+            <Crosshair className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-bold text-[11px] text-slate-100 flex items-center gap-1.5 font-sans truncate">
+              <span>ISRO RS-VLM Studio</span>
+              <span className="text-[9px] font-mono px-1 rounded bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 font-bold">
+                VLM
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-400 font-sans truncate">
+              Cartosat-2S &bull; RISAT-1A SAR &bull; Grounded VQA
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => openVLMStudio('OPTICAL_SAR_FUSION', 'isro-cartosat-risat')}
+          className="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition-colors shadow flex items-center gap-1 flex-shrink-0"
+        >
+          <span>Open</span>
+          <ArrowRight className="w-3 h-3" />
+        </button>
+      </div>
+
       {/* Message Feed */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+        className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth"
       >
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
@@ -147,55 +182,55 @@ export const AssistantPanel: React.FC = () => {
 
         {isLoading && <AnalysisLoader />}
 
-        {/* Dynamic Contextual Follow-up Suggestions */}
+        {/* Dynamic Contextual Follow-up Suggestions with Deep RS-VLM Triggers */}
         {!isLoading && hasResult && (
           <div className="p-3 rounded-xl bg-space-900/60 border border-slate-800/80 space-y-1.5 animate-in fade-in duration-150">
             <div className="text-[10px] text-slate-400 font-sans font-semibold flex items-center gap-1">
               <CornerDownRight className="w-3 h-3 text-cyan-400" />
-              <span>Suggested Follow-up Inquiries:</span>
+              <span>Suggested Follow-up Inquiries &amp; VLM Benchmarks:</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {lastMessage.result?.intent === 'CHANGE_DETECTION' ? (
                 <>
                   <button
-                    onClick={() => handleExecuteQuery('Explain what changed in this region and why.')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    onClick={() => openVLMStudio('BITEMPORAL_CHANGE', 'cdvqa-assam-flood')}
+                    className="px-2 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-[10px] text-cyan-300 font-bold transition-colors flex items-center gap-1"
                   >
-                    "Explain what changed"
+                    <span>🛰️ Open CDVQA Bi-Temporal Split Slider</span>
                   </button>
                   <button
-                    onClick={() => handleExecuteQuery('How much vegetation canopy was converted to urban built-up?')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    onClick={() => handleExecuteQuery('Explain what changed in this region and why.')}
+                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-slate-300 transition-colors"
                   >
-                    "How much vegetation was lost?"
+                    "Explain what changed"
                   </button>
                 </>
               ) : lastMessage.result?.intent === 'FLOOD_DETECTION' ? (
                 <>
                   <button
-                    onClick={() => handleExecuteQuery('Why did this area experience flooding and what is the rainfall history?')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    onClick={() => openVLMStudio('OPTICAL_SAR_FUSION', 'isro-cartosat-risat')}
+                    className="px-2 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-[10px] text-cyan-300 font-bold transition-colors flex items-center gap-1"
                   >
-                    "Why did this area flood?"
+                    <span>📡 Inspect Cloud-Penetrating SAR Fusion</span>
                   </button>
                   <button
-                    onClick={() => handleExecuteQuery('Compare water coverage with previous dry season observations.')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    onClick={() => handleExecuteQuery('Why did this area experience flooding and what is the rainfall history?')}
+                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-slate-300 transition-colors"
                   >
-                    "Compare with baseline dry season"
+                    "Why did this area flood?"
                   </button>
                 </>
               ) : (
                 <>
                   <button
-                    onClick={() => handleExecuteQuery('Compare this survey region with last year observation.')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    onClick={() => openVLMStudio('SINGLE_VQA', 'vrsbench-airport')}
+                    className="px-2 py-1 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-[10px] text-cyan-300 font-bold transition-colors flex items-center gap-1"
                   >
-                    "Compare with last year"
+                    <span>🎯 Launch Visual Grounding Studio</span>
                   </button>
                   <button
                     onClick={() => handleExecuteQuery('Assess vegetation health index (NDVI) across this footprint.')}
-                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-cyan-300 transition-colors"
+                    className="px-2 py-1 rounded-lg bg-space-850 hover:bg-space-800 border border-slate-700 text-[10px] text-slate-300 transition-colors"
                   >
                     "Calculate NDVI Canopy Health"
                   </button>
