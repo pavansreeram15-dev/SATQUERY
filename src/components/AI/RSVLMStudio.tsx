@@ -409,11 +409,14 @@ export const RSVLMStudio: React.FC<RSVLMStudioProps> = ({
         if (typeof reader.result === 'string') {
           const b64 = reader.result;
           setCustomImageBase64(b64);
+          setSelectedTargetId(null);
+          setHoveredTargetId(null);
           setActiveTab('SINGLE_VQA');
           setStudioState('ANALYZING');
+          const prompt = queryText || 'Detect and ground all major objects in this satellite image';
           rsvlmService
             .analyzeSingleVQA({
-              query: queryText || 'Detect and ground all major objects in this satellite image',
+              query: prompt,
               image_data: b64,
               viewport_bbox: selectedPreset.viewport_bbox,
             })
@@ -578,10 +581,14 @@ export const RSVLMStudio: React.FC<RSVLMStudioProps> = ({
               <div className="flex items-center gap-3">
                 <span className="text-slate-400 flex items-center gap-1">
                   <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                  <strong className="text-slate-200">{selectedPreset.sensors.join(' + ')}</strong>
+                  <strong className="text-slate-200">
+                    {customImageBase64 ? 'User Ingested Satellite Raster' : selectedPreset.sensors.join(' + ')}
+                  </strong>
                 </span>
                 <span className="text-slate-500">&bull;</span>
-                <span className="text-slate-400">{selectedPreset.location}</span>
+                <span className="text-slate-400">
+                  {customImageBase64 ? 'Dynamic Sensor Canvas (Custom Upload)' : selectedPreset.location}
+                </span>
               </div>
 
               {/* Multi-View Sub-Controls */}
@@ -801,7 +808,23 @@ export const RSVLMStudio: React.FC<RSVLMStudioProps> = ({
                         <button
                           onClick={() => {
                             setCustomImageBase64(null);
-                            handleRunAnalysis();
+                            setSelectedTargetId(null);
+                            setHoveredTargetId(null);
+                            setStudioState('ANALYZING');
+                            rsvlmService
+                              .analyzeSingleVQA({
+                                query: queryText || selectedPreset.default_query,
+                                preset_id: selectedPreset.id,
+                                image_url: selectedPreset.image_url || selectedPreset.thumbnail,
+                                viewport_bbox: selectedPreset.viewport_bbox,
+                              })
+                              .then((res) => {
+                                setVqaResult(res);
+                                setStudioState('RESULT');
+                              })
+                              .catch(() => {
+                                setStudioState('ERROR');
+                              });
                           }}
                           className="ml-1 text-[10px] text-rose-400 hover:text-rose-300 underline font-bold"
                           title="Reset to benchmark raster"
@@ -1200,12 +1223,27 @@ export const RSVLMStudio: React.FC<RSVLMStudioProps> = ({
             </div>
 
             {/* Quick-Prompt Suggested Query Chips */}
-            {PRESET_QUICK_PROMPTS[selectedPreset.id] && (
+            {(customImageBase64
+              ? [
+                  'Locate and count all commercial aircraft / vehicles',
+                  'Identify and ground all maritime cargo vessels along berths',
+                  'Delineate built-up structures and tarmac infrastructure',
+                  'Assess vegetation canopy (NDVI) and water inundation boundaries',
+                ]
+              : PRESET_QUICK_PROMPTS[selectedPreset.id]) && (
               <div className="px-3 pt-2 pb-1.5 bg-space-950/90 border-t border-slate-800 flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-shrink-0">
                 <span className="text-[10px] text-cyan-400 font-bold whitespace-nowrap flex items-center gap-1">
                   <Zap className="w-3 h-3 text-amber-400" /> Quick Tasks:
                 </span>
-                {PRESET_QUICK_PROMPTS[selectedPreset.id].map((promptText, idx) => (
+                {(customImageBase64
+                  ? [
+                      'Locate and count all commercial aircraft / vehicles',
+                      'Identify and ground all maritime cargo vessels along berths',
+                      'Delineate built-up structures and tarmac infrastructure',
+                      'Assess vegetation canopy (NDVI) and water inundation boundaries',
+                    ]
+                  : PRESET_QUICK_PROMPTS[selectedPreset.id] || []
+                ).map((promptText, idx) => (
                   <button
                     key={idx}
                     onClick={() => {

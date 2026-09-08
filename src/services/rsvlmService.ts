@@ -1,4 +1,5 @@
 import { fetchApi } from './api';
+import { rasterEngine } from '../utils/rasterEngine';
 import {
   RSVLMAnalysisResult,
   ChangeDetectionResult,
@@ -133,9 +134,41 @@ class RSVLMService {
     preset_id?: string;
     target_classes?: string[];
   }): Promise<RSVLMAnalysisResult> {
-    const key = `vqa_${params.preset_id || ''}_${params.query}_${(params.image_data || '').slice(0, 40)}`;
+    const key = `vqa_${params.preset_id || 'custom'}_${params.query}_${(params.image_data || params.image_url || '').slice(0, 50)}`;
     if (this.cache.has(key)) {
       return this.cache.get(key);
+    }
+
+    // If custom image data was supplied, try backend first, with instant client-side Computer Vision fallback
+    if (params.image_data) {
+      try {
+        const res = await fetchApi<{ success: boolean; data: RSVLMAnalysisResult }>('/api/ai/rs-vlm/analyze', {
+          method: 'POST',
+          body: JSON.stringify({
+            mode: 'SINGLE_VQA',
+            ...params,
+          }),
+        });
+        if (res.success && res.data && res.data.grounded_objects && res.data.grounded_objects.length > 0) {
+          this.cache.set(key, res.data);
+          return res.data;
+        }
+      } catch (e) {
+        console.warn('[RSVLMService] Backend custom image analyze error, executing dynamic client-side CV grounding:', e);
+      }
+
+      // Execute dynamic in-browser computer vision saliency engine directly on image pixels
+      try {
+        const clientRes = await rasterEngine.detectObjectsFromImage(
+          params.image_data,
+          params.query,
+          params.viewport_bbox || [77.68, 13.18, 77.73, 13.22]
+        );
+        this.cache.set(key, clientRes);
+        return clientRes;
+      } catch (cvErr) {
+        console.warn('[RSVLMService] Client CV engine error, falling back to heuristic grounding:', cvErr);
+      }
     }
 
     try {
